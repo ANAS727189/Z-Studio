@@ -38,7 +38,7 @@ class Lexer {
     }
 
     skipWhitespace() {
-        while (this.currChar === ' ' || this.currChar === '\r' || this.currChar === '\t' || this.currChar === '\n') {
+        while (this.currChar === ' ' || this.currChar === '\r' || this.currChar === '\t') {
             this.nextChar();
         }
     }
@@ -68,7 +68,10 @@ class Lexer {
                 tempPos++;
             }
 
-            if (!foundClosing)  return false;
+            if (!foundClosing) {
+                this.reportError('Unterminated comment', this.line, this.column, 'Close with */');
+                return false;
+            }
 
             this.nextChar();
             this.nextChar();

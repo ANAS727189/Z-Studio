@@ -1,10 +1,9 @@
-# 📘 Z-- Language Specification (`lang.doc`)
-
-## 🧪 Sample Z-- Programs
-
-### 1. Average Calculation
-
-```z--
+📘 Z-- Language Specification (lang.doc)
+🧪 Sample Z-- Programs
+1. Average Calculation
+z
+Copy
+Edit
 start
   let a = 10
   let b = 20
@@ -13,11 +12,10 @@ start
   print("Average is: ")
   print(avg)
 end
-```
-
-### 2. Fibonacci Generator
-
-```z--
+2. Fibonacci Generator
+z
+Copy
+Edit
 start
   let n
   print("How many Fibonacci numbers do you want?")
@@ -32,85 +30,68 @@ start
     n = n - 1
   }
 end
-```
-
----
-
-## 🧩 Syntax & Snippets
-
-### 📦 Variable Declaration & Data Types
-
-```z--
+🧩 Syntax & Snippets
+📦 Variable Declaration & Data Types
+z
+Copy
+Edit
 let number = 12       // integer
 let name = "Alice"    // string
 let score = 95.5      // float
 let isActive = true   // boolean
-```
+Use let to declare variables of any type. Type is inferred based on the assigned value.
 
-> Use `let` to declare variables of any type. Type is inferred based on the assigned value.
-
----
-
-### 💬 Comments
-
-```z--
+💬 Comments
+z
+Copy
+Edit
 // Single-line comment
 
 /* 
    Multi-line
    comment
 */
-```
-
----
-
-### 🔁 Control Flow
-
-#### if-else
-
-```z--
+🔁 Control Flow
+if-else
+z
+Copy
+Edit
 if condition {
   // statements
 } else {
   // statements
 }
-```
-
-#### while Loop
-
-```z--
+while Loop
+z
+Copy
+Edit
 while condition {
   // statements
 }
-```
-
-#### for Loop
-
-```z--
+for Loop
+z
+Copy
+Edit
 for init, condition, increment {
   // statements
 }
-```
-
 Example:
 
-```z--
+z
+Copy
+Edit
 for a = 2, a < 10, a++ {
   print(a)
 }
-```
-
----
-
-### 🔂 Loop Control
-
-#### `break` Keyword
-
+🔂 Loop Control
+break Keyword
 Used to exit loops prematurely.
 
 Example:
 
-```z--
+z
+Copy
+Edit
 start
   let n = 10
   while n > 0 {
@@ -121,56 +102,49 @@ start
     n = n - 1
   }
 end
-```
+🧰 Functions
+Defined using fun keyword.
 
----
-
-## 🧰 Functions
-
-Defined using `fun` keyword.
-
-### Syntax:
-
-```z--
+Syntax:
+z
+Copy
+Edit
 fun functionName {
   arg = (param1, param2, ...)
   // function body
   return expression
 }
-```
-
-### Example:
-
-```z--
+Example:
+z
+Copy
+Edit
 fun solve {
   arg = (a, b)
   return a + b
 }
 
 solve(5, 3);
-```
+⚙️ Operators
+Logical & Bitwise
+&& → Logical AND
 
----
+|| → Logical OR
 
-## ⚙️ Operators
+| → Bitwise OR
 
-### Logical & Bitwise
+& → Bitwise AND
 
-* `&&` → Logical AND
-* `||` → Logical OR
-* `|`  → Bitwise OR
-* `&`  → Bitwise AND
-* `^`  → Bitwise XOR
-* `%`  → Modulo (remainder)
+^ → Bitwise XOR
 
----
+% → Modulo (remainder)
 
-## ✅ Notes
+✅ Notes
+Strings are enclosed in double quotes " ".
 
-* Strings are enclosed in double quotes `" "`.
-* `input(var)` is used for user input.
-* Semicolons are **not required**.
-* Blocks are enclosed in `{ }`.
-* The program begins with `start` and ends with `end`.
+input(var) is used for user input.
 
----
+Semicolons are not required.
+
+Blocks are enclosed in { }.
+
+The program begins with start and ends with end.

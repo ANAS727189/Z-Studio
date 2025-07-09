@@ -1,0 +1,91 @@
+start
+  let x = 1 + 2 * 3
+  ++x
+  x--
+  print("Value: ")
+  print(x)
+  if x > 5 {
+    print("big")
+  } else {
+    print("small")
+  }
+  fun inc {
+    arg = (a)
+    return a + 1
+  }
+  print(inc(x))
+end
+
+
+Output of AST(Abstract Syntax Tree) =>
+
+ProgramNode {
+  statements: [
+    LetNode {
+      name: 'x',
+      expr: BinOpNode {
+        left: NumberNode { value: 1 },
+        op: Token { tokenText: '+', tokenKind: 202, line: 2, column: 13 },
+        right: BinOpNode {
+          left: NumberNode { value: 2 },
+          op: Token { tokenText: '*', tokenKind: 204, line: 2, column: 17 },
+          right: NumberNode { value: 3 }
+        }
+      }
+    },
+    PrefixOpNode {
+      op: Token { tokenText: '++', tokenKind: 212, line: 3, column: 3 },
+      expr: VarNode { name: 'x' }
+    },
+    PostfixOpNode {
+      op: Token { tokenText: '--', tokenKind: 213, line: 4, column: 4 },
+      expr: VarNode { name: 'x' }
+    },
+    PrintNode {
+      expr: StringNode { value: 'Value: ' },
+      is_string: true
+    },
+    PrintNode { expr: VarNode { name: 'x' }, is_string: false },
+    IfNode {
+      condition: BinOpNode {
+        left: VarNode { name: 'x' },
+        op: Token { tokenText: '>', tokenKind: 209, line: 7, column: 8 },
+        right: NumberNode { value: 5 }
+      },
+      then_block: [
+        PrintNode {
+          expr: StringNode { value: 'big' },
+          is_string: true
+        }
+      ],
+      else_block: [
+        PrintNode {
+          expr: StringNode { value: 'small' },
+          is_string: true
+        }
+      ]
+    },
+    FunctionNode {
+      name: 'inc',
+      params: [ 'a' ],
+      body: [
+        ReturnNode {
+          expr: BinOpNode {
+            left: VarNode { name: 'a' },
+            op: Token {
+              tokenText: '+',
+              tokenKind: 202,
+              line: 14,
+              column: 14
+            },
+            right: NumberNode { value: 1 }
+          }
+        }
+      ]
+    },
+    PrintNode {
+      expr: CallNode { name: 'inc', args: [ VarNode { name: 'x' } ] },
+      is_string: false
+    }
+  ]
+}

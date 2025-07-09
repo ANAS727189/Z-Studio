@@ -14,17 +14,19 @@ function main() {
     const source = fs.readFileSync(process.argv[2], 'utf8');
     let lexer = new Lexer(source);
     let parser = new Parser(lexer);
-    parser.program();
+    const ast = parser.program();
+    console.dir(ast, { depth: null }); // Pretty print full AST
+
 
     // while(lexer.peek() != '\0') {
     //     console.log(lexer.currChar);
     //     lexer.nextChar();
     // }
-    let token = lexer.getToken();
-    while (token.tokenKind != TokenType.EOF) {
-        console.log(`Token: ${token.tokenText}, Type: ${Token.getTokenTypeName(token.tokenKind)}`);
-        token = lexer.getToken();
-    }
+    // let token = lexer.getToken();
+    // while (token.tokenKind != TokenType.EOF) {
+    //     console.log(`Token: ${token.tokenText}, Type: ${Token.getTokenTypeName(token.tokenKind)}`);
+    //     token = lexer.getToken();
+    // }
 }
 
 main();
