@@ -4,8 +4,9 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "start": "node index.js",
-    "test": "jest"
+    "start": "node src/index.js",
+    "test": "vitest",
+    "test:ui": "vitest --ui"
   },
   "keywords": [],
   "author": "",
@@ -15,7 +16,7 @@
     "express": "^5.1.0"
   },
   "devDependencies": {
-    "@types/jest": "^30.0.0",
-    "jest": "^30.0.4"
+    "@vitest/ui": "^3.2.4",
+    "vitest": "^3.2.4"
   }
 }
