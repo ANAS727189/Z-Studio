@@ -1,8 +1,9 @@
 import Lexer from "./lexer.js";
-import { TokenType, Token } from "./token.js";
 import {Parser} from "./parser.js"
 import fs from 'fs';
-
+import { Emitter} from "./emit.js";
+import { CodeGenerator } from "./visitor.js";
+import {LLVMGenerator} from "./llvm.js";
 
 function main() {
     if (process.argv.length !== 3) {
@@ -13,18 +14,31 @@ function main() {
     // let source = "+-Anas /*is (the) {best}*/ true 1234 0xFF 0.1234 0b10101010 false //comment  123" ;
     const source = fs.readFileSync(process.argv[2], 'utf8');
     let lexer = new Lexer(source);
-     let token = lexer.getToken();
-    while (token.tokenKind != TokenType.EOF) {
-        console.log(`Token: ${token.tokenText}, Type: ${Token.getTokenTypeName(token.tokenKind)}`);
-        token = lexer.getToken();
-    }
-    console.log(`Token: , Type: EOF, Line: ${token.line}, Col: ${token.column}`);
-    lexer = new Lexer(source);
+    //  let token = lexer.getToken();
+    // while (token.tokenKind != TokenType.EOF) {
+    //     console.log(`Token: ${token.tokenText}, Type: ${Token.getTokenTypeName(token.tokenKind)}`);
+    //     token = lexer.getToken();
+    // }
+    // console.log(`Token: , Type: EOF, Line: ${token.line}, Col: ${token.column}`);
+    // lexer = new Lexer(source);
+    const emitter = new Emitter('output.c');
     let parser = new Parser(lexer);
     const ast = parser.program();
-    console.log("Parser errors: ", parser.errors);
-    console.dir(ast, { depth: null }); // Pretty print full AST
+    // console.log("Parser errors: ", parser.errors);
+    // console.dir(ast, { depth: null }); // Pretty print full AST
+    const c_generator = new CodeGenerator();
+    c_generator.visit(ast);
+    emitter.header = c_generator.header.join('\n');
+    emitter.code = c_generator.code.join('\n');
+    emitter.writeFile();
+    console.log('C code generated to output.c');
 
+
+    const llvmGen = new LLVMGenerator();
+    llvmGen.visit(ast);
+    const irCode = llvmGen.generate();
+    fs.writeFileSync("output.ll", irCode); 
+    console.log("LLVM IR code written to output.ll");
 
     // while(lexer.peek() != '\0') {
     //     console.log(lexer.currChar);

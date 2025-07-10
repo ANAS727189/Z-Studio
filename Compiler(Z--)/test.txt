@@ -1,5 +1,26 @@
+start
+  let x = 1 + 2 * 3
+  let a = 0
+  input(a)
+  ++x
+  x--
+  print("Value: ")
+  print(x)
+  if x > 5 {
+    print("big")
+  } else {
+    print("small")
+  }
+  fun inc {
+    arg = (a)
+    return a + 1
+  }
+  print(inc(x))
+end
 
-Output of AST(Abstract Syntax Tree) =>
+
+
+Output of above as an AST(Abstract Syntax Tree) =>
 
 ProgramNode {
   statements: [
