@@ -50,7 +50,7 @@ Z-studio/
 
    * `npm run dev` (frontend)
    * `node server.js` (server)
-   * `python3 compiler/main.py` (if compiler is in Python, for example)
+   * `node src/index.js` (compiler backend)
 
 ---
 
