@@ -1,5 +1,7 @@
-📘 Z-- Language Specification (lang.doc)
-🧪 Sample Z-- Programs
+Z-- Language Specification (lang.doc)
+
+Sample Z-- Programs
+
 1. Average Calculation
 start
   let a = 10
@@ -9,6 +11,7 @@ start
   print("Average is: ")
   print(avg)
 end
+
 2. Fibonacci Generator
 start
   let n
@@ -24,8 +27,10 @@ start
     n = n - 1
   }
 end
-🧩 Syntax & Snippets
-📦 Variable Declaration & Data Types
+
+
+Syntax & Snippets
+Variable Declaration & Data Types
 
 let number = 12       // integer
 let name = "Alice"    // string
@@ -33,15 +38,16 @@ let score = 95.5      // float
 let isActive = true   // boolean
 Use let to declare variables of any type. Type is inferred based on the assigned value.
 
-💬 Comments
-
+Comments
 // Single-line comment
 
 /* 
    Multi-line
    comment
 */
-🔁 Control Flow
+
+
+Control Flow
 if-else
 
 if condition {
@@ -66,7 +72,9 @@ Example:
 for a = 2, a < 10, a++ {
   print(a)
 }
-🔂 Loop Control
+
+
+Loop Control
 break Keyword
 Used to exit loops prematurely.
 
@@ -83,7 +91,8 @@ start
     n = n - 1
   }
 end
-🧰 Functions
+
+Functions
 Defined using fun keyword.
 
 Syntax:
@@ -103,7 +112,7 @@ fun solve {
 solve(5, 3);
 
 
-⚙️ Operators
+Operators
 
 Logical & Bitwise
 && → Logical AND
@@ -114,7 +123,7 @@ Logical & Bitwise
 % → Modulo (remainder)
 
 
-✅ Notes
+Notes
 Strings are enclosed in double quotes " ".
 input(var) is used for user input.
 Semicolons are not required.
