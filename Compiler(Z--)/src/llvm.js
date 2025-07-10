@@ -3,7 +3,7 @@ import { TokenType } from './token.js';
 import {
   ProgramNode, LetNode, PrintNode, InputNode, IfNode, WhileNode, ForNode, BreakNode,
   FunctionNode, CallNode, ReturnNode, BinOpNode, UnaryOpNode, NumberNode, StringNode,
-  BooleanNode, VarNode, PrefixOpNode, PostfixOpNode
+  BooleanNode, VarNode, PrefixOpNode, PostfixOpNode, ExpressionStatementNode, AssignmentNode
 } from './ast.js';
 
 class LLVMGenerator {
@@ -67,11 +67,32 @@ class LLVMGenerator {
   }
 
   visit_ProgramNode(node) {
-    const functionStatements = node.statements.filter(stmt => stmt instanceof FunctionNode);
-    for (const funcStmt of functionStatements) {
-      this.visit(funcStmt);
+    const doubleTy = llvm.Type.getDoubleTy(this.context);
+    this.symbolTable['global'] = {}; // Add global scope
+
+    // Collect global variables (e.g., from LetNode outside functions)
+    const mainStatements = node.statements.filter(stmt => !(stmt instanceof FunctionNode));
+    for (const stmt of mainStatements) {
+        if (stmt instanceof LetNode) {
+            const globalVar = new llvm.GlobalVariable(
+                this.module,
+                doubleTy,
+                false, // Not constant
+                llvm.GlobalVariable.LinkageTypes.ExternalLinkage,
+                llvm.ConstantFP.get(doubleTy, 0.0),
+                stmt.name
+            );
+            this.symbolTable['global'][stmt.name] = globalVar;
+        }
     }
 
+    // Process function definitions
+    const functionStatements = node.statements.filter(stmt => stmt instanceof FunctionNode);
+    for (const funcStmt of functionStatements) {
+        this.visit(funcStmt);
+    }
+
+    // Create main function
     const int32Ty = llvm.Type.getInt32Ty(this.context);
     const funcType = llvm.FunctionType.get(int32Ty, [], false);
     const mainFunc = llvm.Function.Create(funcType, llvm.Function.LinkageTypes.ExternalLinkage, 'main', this.module);
@@ -81,14 +102,14 @@ class LLVMGenerator {
     this.currentFunction = 'main';
     this.symbolTable['main'] = {};
 
-    const mainStatements = node.statements.filter(stmt => !(stmt instanceof FunctionNode));
+    // Process main statements
     for (const stmt of mainStatements) {
-      this.visit(stmt);
+        this.visit(stmt);
     }
 
     const zeroConst = llvm.ConstantInt.get(int32Ty, 0);
     this.builder.CreateRet(zeroConst);
-  }
+}
 
   visit_FunctionNode(node) {
     const doubleTy = llvm.Type.getDoubleTy(this.context);
@@ -181,6 +202,21 @@ class LLVMGenerator {
       this.builder.CreateCall(this.printf, [fmtPtr, value]);
     }
   }
+
+  visit_ExpressionStatementNode(node) {
+    this.visit(node.expr);
+}
+
+visit_AssignmentNode(node) {
+    const value = this.visit(node.expr);
+    const funcSymbolTable = this.symbolTable[this.currentFunction];
+    if (!(node.name in funcSymbolTable)) {
+        const doubleTy = llvm.Type.getDoubleTy(this.context);
+        const ptr = this.builder.CreateAlloca(doubleTy, null, node.name);
+        funcSymbolTable[node.name] = ptr;
+    }
+    this.builder.CreateStore(value, funcSymbolTable[node.name]);
+}
 
   visit_InputNode(node) {
     const fmtStr = '%lf';
@@ -337,53 +373,55 @@ class LLVMGenerator {
     this.builder.SetInsertPoint(afterBreak);
   }
 
-  visit_BinOpNode(node) {
+ visit_BinOpNode(node) {
     const left = this.visit(node.left);
     const right = this.visit(node.right);
     const doubleTy = llvm.Type.getDoubleTy(this.context);
 
     switch (node.op.tokenKind) {
-      case TokenType.PLUS:
-        return this.builder.CreateFAdd(left, right, 'addtmp');
-      case TokenType.MINUS:
-        return this.builder.CreateFSub(left, right, 'subtmp');
-      case TokenType.ASTERISK:
-        return this.builder.CreateFMul(left, right, 'multmp');
-      case TokenType.SLASH:
-        return this.builder.CreateFDiv(left, right, 'divtmp');
-      case TokenType.EQEQ:
-        const eq = this.builder.CreateFCmpOEQ(left, right, 'eqtmp');
-        return this.builder.CreateUIToFP(eq, doubleTy, 'booltmp');
-      case TokenType.NOTEQ:
-        const ne = this.builder.CreateFCmpONE(left, right, 'netmp');
-        return this.builder.CreateUIToFP(ne, doubleTy, 'booltmp');
-      case TokenType.LT:
-        const lt = this.builder.CreateFCmpOLT(left, right, 'lttmp');
-        return this.builder.CreateUIToFP(lt, doubleTy, 'booltmp');
-      case TokenType.LTEQ:
-        const le = this.builder.CreateFCmpOLE(left, right, 'letmp');
-        return this.builder.CreateUIToFP(le, doubleTy, 'booltmp');
-      case TokenType.GT:
-        const gt = this.builder.CreateFCmpOGT(left, right, 'gttmp');
-        return this.builder.CreateUIToFP(gt, doubleTy, 'booltmp');
-      case TokenType.GTEQ:
-        const ge = this.builder.CreateFCmpOGE(left, right, 'getmp');
-        return this.builder.CreateUIToFP(ge, doubleTy, 'booltmp');
-      case TokenType.AND:
-        const leftBool = this.builder.CreateFCmpONE(left, llvm.ConstantFP.get(doubleTy, 0.0), 'leftbool');
-        const rightBool = this.builder.CreateFCmpONE(right, llvm.ConstantFP.get(doubleTy, 0.0), 'rightbool');
-        const andResult = this.builder.CreateAnd(leftBool, rightBool, 'andtmp');
-        return this.builder.CreateUIToFP(andResult, doubleTy, 'booltmp');
-      case TokenType.OR:
-        const leftBoolOr = this.builder.CreateFCmpONE(left, llvm.ConstantFP.get(doubleTy, 0.0), 'leftboolor');
-        const rightBoolOr = this.builder.CreateFCmpONE(right, llvm.ConstantFP.get(doubleTy, 0.0), 'rightboolor');
-        const orResult = this.builder.CreateOr(leftBoolOr, rightBoolOr, 'ortmp');
-        return this.builder.CreateUIToFP(orResult, doubleTy, 'booltmp');
-      default:
-        console.error(`Unsupported operator: ${node.op.tokenKind}`);
-        return llvm.ConstantFP.get(doubleTy, 0.0);
+        case TokenType.PLUS:
+            return this.builder.CreateFAdd(left, right, 'addtmp');
+        case TokenType.MINUS:
+            return this.builder.CreateFSub(left, right, 'subtmp');
+        case TokenType.ASTERISK:
+            return this.builder.CreateFMul(left, right, 'multmp');
+        case TokenType.SLASH:
+            return this.builder.CreateFDiv(left, right, 'divtmp');
+        case TokenType.MOD: // Add this case
+            return this.builder.CreateFRem(left, right, 'modtmp');
+        case TokenType.EQEQ:
+            const eq = this.builder.CreateFCmpOEQ(left, right, 'eqtmp');
+            return this.builder.CreateUIToFP(eq, doubleTy, 'booltmp');
+        case TokenType.NOTEQ:
+            const ne = this.builder.CreateFCmpONE(left, right, 'netmp');
+            return this.builder.CreateUIToFP(ne, doubleTy, 'booltmp');
+        case TokenType.LT:
+            const lt = this.builder.CreateFCmpOLT(left, right, 'lttmp');
+            return this.builder.CreateUIToFP(lt, doubleTy, 'booltmp');
+        case TokenType.LTEQ:
+            const le = this.builder.CreateFCmpOLE(left, right, 'letmp');
+            return this.builder.CreateUIToFP(le, doubleTy, 'booltmp');
+        case TokenType.GT:
+            const gt = this.builder.CreateFCmpOGT(left, right, 'gttmp');
+            return this.builder.CreateUIToFP(gt, doubleTy, 'booltmp');
+        case TokenType.GTEQ:
+            const ge = this.builder.CreateFCmpOGE(left, right, 'getmp');
+            return this.builder.CreateUIToFP(ge, doubleTy, 'booltmp');
+        case TokenType.AND:
+            const leftBool = this.builder.CreateFCmpONE(left, llvm.ConstantFP.get(doubleTy, 0.0), 'leftbool');
+            const rightBool = this.builder.CreateFCmpONE(right, llvm.ConstantFP.get(doubleTy, 0.0), 'rightbool');
+            const andResult = this.builder.CreateAnd(leftBool, rightBool, 'andtmp');
+            return this.builder.CreateUIToFP(andResult, doubleTy, 'booltmp');
+        case TokenType.OR:
+            const leftBoolOr = this.builder.CreateFCmpONE(left, llvm.ConstantFP.get(doubleTy, 0.0), 'leftboolor');
+            const rightBoolOr = this.builder.CreateFCmpONE(right, llvm.ConstantFP.get(doubleTy, 0.0), 'rightboolor');
+            const orResult = this.builder.CreateOr(leftBoolOr, rightBoolOr, 'ortmp');
+            return this.builder.CreateUIToFP(orResult, doubleTy, 'booltmp');
+        default:
+            console.error(`Unsupported operator: ${node.op.tokenKind}`);
+            return llvm.ConstantFP.get(doubleTy, 0.0);
     }
-  }
+}
 
   visit_UnaryOpNode(node) {
     const expr = this.visit(node.expr);
@@ -454,15 +492,17 @@ class LLVMGenerator {
   }
 
   visit_VarNode(node) {
-    const funcSymbolTable = this.symbolTable[this.currentFunction];
-    if (!(node.name in funcSymbolTable)) {
-      console.error(`Undefined variable: ${node.name}`);
-      const doubleTy = llvm.Type.getDoubleTy(this.context);
-      return llvm.ConstantFP.get(doubleTy, 0.0);
+    const funcSymbolTable = this.symbolTable[this.currentFunction] || {};
+    const globalSymbolTable = this.symbolTable['global'] || {};
+    const ptr = funcSymbolTable[node.name] || globalSymbolTable[node.name];
+    if (!ptr) {
+        console.error(`Undefined variable: ${node.name}`);
+        const doubleTy = llvm.Type.getDoubleTy(this.context);
+        return llvm.ConstantFP.get(doubleTy, 0.0);
     }
     const doubleTy = llvm.Type.getDoubleTy(this.context);
-    return this.builder.CreateLoad(doubleTy, funcSymbolTable[node.name], node.name);
-  }
+    return this.builder.CreateLoad(doubleTy, ptr, node.name);
+}
 
   visit_CallNode(node) {
     const func = this.module.getFunction(node.name);
@@ -494,9 +534,11 @@ class LLVMGenerator {
     if (node instanceof NumberNode) return this.visit_NumberNode(node);
     if (node instanceof BooleanNode) return this.visit_BooleanNode(node);
     if (node instanceof VarNode) return this.visit_VarNode(node);
+    if (node instanceof ExpressionStatementNode) return this.visit_ExpressionStatementNode(node); 
+    if (node instanceof AssignmentNode) return this.visit_AssignmentNode(node); 
     console.error(`Unknown node type: ${node.constructor.name}`);
     return null;
-  }
+}
 
   generate() {
     return this.module.print();

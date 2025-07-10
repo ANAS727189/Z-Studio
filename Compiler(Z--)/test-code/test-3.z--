@@ -1,0 +1,15 @@
+start
+  let n
+  print("How many Fibonacci numbers?")
+  input(n)
+  let a = 0
+  let b = 1
+  let count = 0
+  while count < n {
+    print(a)
+    let temp = a + b
+    a = b
+    b = temp
+    count = count + 1
+  }
+end

@@ -165,8 +165,15 @@ class VarNode extends ASTNode {
     }
 }
 
+class ExpressionStatementNode extends ASTNode {
+  constructor(expr) {
+    super();
+    this.expr = expr;
+  }
+}
+
 export {
     ProgramNode, AssignmentNode, LetNode, PrintNode, InputNode, IfNode, WhileNode, ForNode, BreakNode,
     FunctionNode, CallNode, PrefixOpNode, PostfixOpNode, ReturnNode, BinOpNode, UnaryOpNode, 
-    NumberNode, StringNode, BooleanNode, VarNode
+    NumberNode, StringNode, BooleanNode, VarNode, ExpressionStatementNode
 };

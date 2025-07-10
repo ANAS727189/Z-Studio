@@ -24,21 +24,35 @@ function main() {
     const emitter = new Emitter('output.c');
     let parser = new Parser(lexer);
     const ast = parser.program();
-    // console.log("Parser errors: ", parser.errors);
-    // console.dir(ast, { depth: null }); // Pretty print full AST
-    const c_generator = new CodeGenerator();
-    c_generator.visit(ast);
-    emitter.header = c_generator.header.join('\n');
-    emitter.code = c_generator.code.join('\n');
-    emitter.writeFile();
-    console.log('C code generated to output.c');
+    console.log("Parser errors: ", parser.errors);
+     if (parser.errors.length > 0) {
+        console.error('Parser encountered errors. Compilation aborted.');
+        process.exit(1);
+    }
+    
+    if (!ast) {
+        console.error('Failed to parse program. AST is null.');
+        process.exit(1);
+    }
+    console.dir(ast, { depth: null }); // Pretty print full AST
+    
+     try {
+        const c_generator = new CodeGenerator();
+        c_generator.visit(ast);
+        emitter.header = c_generator.header.join('\n');
+        emitter.code = c_generator.code.join('\n');
+        emitter.writeFile();
+        console.log('C code generated to output.c');
 
-
-    const llvmGen = new LLVMGenerator();
-    llvmGen.visit(ast);
-    const irCode = llvmGen.generate();
-    fs.writeFileSync("output.ll", irCode); 
-    console.log("LLVM IR code written to output.ll");
+        const llvmGen = new LLVMGenerator();
+        llvmGen.visit(ast);
+        const irCode = llvmGen.generate();
+        fs.writeFileSync("output.ll", irCode); 
+        console.log("LLVM IR code written to output.ll");
+    } catch (error) {
+        console.error('Code generation failed:', error.message);
+        process.exit(1);
+    }
 
     // while(lexer.peek() != '\0') {
     //     console.log(lexer.currChar);

@@ -1,0 +1,37 @@
+start
+  fun calculate {
+    arg = (a, b, op)
+    if op == 1 {
+      return a + b
+    } else {
+      if op == 2 {
+        return a - b
+      } else {
+        if op == 3 {
+          return a * b
+        } else {
+          if op == 4 {
+            return a / b
+          } else {
+            return 0
+          }
+        }
+      }
+    }
+  }
+  
+  let num1
+  let num2
+  let operation
+  
+  print("Enter first number: ")
+  input(num1)
+  print("Enter second number: ")
+  input(num2)
+  print("Choose operation (1=+, 2=-, 3=*, 4=/): ")
+  input(operation)
+  
+  let result = calculate(num1, num2, operation)
+  print("Result: ")
+  print(result)
+end

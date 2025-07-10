@@ -1,0 +1,26 @@
+start
+  let zero = 0
+  let negative = -10
+  let large = 1000000
+  
+  print("Testing edge cases:")
+  print(zero)
+  print(negative)
+  print(large)
+  
+  if zero == 0 {
+    print("Zero comparison works")
+  }
+  
+  if negative < 0 {
+    print("Negative comparison works")
+  }
+  
+  if large > 999999 {
+    print("Large number comparison works")
+  }
+  
+  let division = large / zero
+  print("Division by zero result:")
+  print(division)
+end

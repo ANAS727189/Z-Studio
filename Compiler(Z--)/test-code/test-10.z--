@@ -1,0 +1,47 @@
+start
+  fun gcd {
+    arg = (a, b)
+    while b != 0 {
+      let temp = b
+      b = a % b
+      a = temp
+    }
+    return a
+  }
+  
+  fun lcm {
+    arg = (a, b)
+    return (a * b) / gcd(a, b)
+  }
+  
+  fun isPrime {
+    arg = (n)
+    if n <= 1 {
+      return false
+    }
+    let i = 2
+    while i * i <= n {
+      if n % i == 0 {
+        return false
+      }
+      i = i + 1
+    }
+    return true
+  }
+  
+  let num1 = 12
+  let num2 = 18
+  
+  print("GCD of 12 and 18:")
+  print(gcd(num1, num2))
+  
+  print("LCM of 12 and 18:")
+  print(lcm(num1, num2))
+  
+  let testNum = 17
+  if isPrime(testNum) {
+    print("17 is prime")
+  } else {
+    print("17 is not prime")
+  }
+end

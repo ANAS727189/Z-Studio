@@ -1,25 +1,57 @@
 #include <stdio.h>
 #include <stdbool.h>
-double x;
-double a;
-double inc(double a);double inc(double a) {
-return (a + 1);
+
+// Global variable declarations
+double num1;
+double num2;
+double operation;
+double result;
+
+// Function definitions
+double calculate(double a, double b, double op) {
+    if ((op == 1)) {
+        return (a + b);
+    }
+    else {
+        if ((op == 2)) {
+            return (a - b);
+        }
+        else {
+            if ((op == 3)) {
+                return (a * b);
+            }
+            else {
+                if ((op == 4)) {
+                    return (a / b);
+                }
+                else {
+                    return 0;
+                }
+            }
+        }
+    }
 }
 int main(void) {
-x = (1 + (2 * 3));
-a = 0;
-if (scanf("%lf", &a) != 1) {
-a = 0;
-scanf("%*s");
-}
-printf("Value: \n");
-printf("%.2f\n", x);
-if ((x > 5)) {
-printf("big\n");
-}
-else {
-printf("small\n");
-}
-printf("%.2f\n", inc(x));
-return 0;
+    num1 = 0;
+    num2 = 0;
+    operation = 0;
+    printf("Enter first number: \n");
+    if (scanf("%lf", &num1) != 1) {
+        num1 = 0;
+        scanf("%*s");
+    }
+    printf("Enter second number: \n");
+    if (scanf("%lf", &num2) != 1) {
+        num2 = 0;
+        scanf("%*s");
+    }
+    printf("Choose operation (1=+, 2=-, 3=*, 4=/): \n");
+    if (scanf("%lf", &operation) != 1) {
+        operation = 0;
+        scanf("%*s");
+    }
+    result = calculate(num1, num2, operation);
+    printf("Result: \n");
+    printf("%.2f\n", result);
+    return 0;
 }

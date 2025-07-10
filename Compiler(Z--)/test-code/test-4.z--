@@ -1,0 +1,31 @@
+start
+  fun add {
+    arg = (x, y)
+    return x + y
+  }
+  
+  fun multiply {
+    arg = (a, b)
+    return a * b
+  }
+  
+  fun factorial {
+    arg = (n)
+    if n <= 1 {
+      return 1
+    } else {
+      return n * factorial(n - 1)
+    }
+  }
+  
+  let result1 = add(5, 3)
+  let result2 = multiply(4, 6)
+  let result3 = factorial(5)
+  
+  print("5 + 3 = ")
+  print(result1)
+  print("4 * 6 = ")
+  print(result2)
+  print("5! = ")
+  print(result3)
+end

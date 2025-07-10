@@ -1,0 +1,22 @@
+start
+  let rows = 5
+  let i = 1
+  
+  while i <= rows {
+    let j = 1
+    while j <= i {
+      print("*")
+      j = j + 1
+    }
+    print("") // New line
+    i = i + 1
+  }
+  
+  print("Multiplication table:")
+  for x = 1, x <= 3, x++ {
+    for y = 1, y <= 3, y++ {
+      let product = x * y
+      print(product)
+    }
+  }
+end
