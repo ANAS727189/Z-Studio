@@ -11,7 +11,7 @@ const NotFound = () => {
         justifyContent: 'center', 
         alignItems: 'center', 
         height: '100vh',
-        backgroundColor: '#000'
+        backgroundColor: '#060111'
     }}>
             <FuzzyText 
                 baseIntensity={0.2} 
