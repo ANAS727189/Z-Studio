@@ -1,5 +1,6 @@
 import { compileWithJudge0 } from '../services/judge0.service.js';
 import { JUDGE0_BASE_URL, judge0Headers } from "../config/judge0.config.js";
+import axios from 'axios';
 
 export const compileCode = async (req, res, next) => {
   try {
