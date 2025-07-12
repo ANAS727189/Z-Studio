@@ -2,8 +2,8 @@ import { runZLangCompiler } from '../services/z-lang.service.js';
 
 export const compileZLang = async (req, res, next) => {
   try {
-    const output = await runZLangCompiler(req.body.code);
-    res.json({ success: true, output });
+    const { compilerOutput, programOutput } = await runZLangCompiler(req.body.code);
+    res.json({ success: true, compilerOutput, programOutput });
   } catch (err) {
     next(err);
   }

@@ -96,9 +96,9 @@ class LLVMGenerator {
     const int32Ty = llvm.Type.getInt32Ty(this.context);
     const funcType = llvm.FunctionType.get(int32Ty, [], false);
     const mainFunc = llvm.Function.Create(funcType, llvm.Function.LinkageTypes.ExternalLinkage, 'main', this.module);
-    const block = llvm.BasicBlock.Create(this.context, 'entry', mainFunc);
+   const entry = llvm.BasicBlock.Create(this.context, `entry${this.getUniqueId()}`, mainFunc);
     this.builder = new llvm.IRBuilder(this.context);
-    this.builder.SetInsertPoint(block);
+    this.builder.SetInsertPoint(entry);
     this.currentFunction = 'main';
     this.symbolTable['main'] = {};
 
@@ -121,7 +121,8 @@ class LLVMGenerator {
       func.getArg(i).setName(node.params[i]);
     }
 
-    const block = llvm.BasicBlock.Create(this.context, 'entry', func);
+    node.params.forEach((param, i) => func.getArg(i).setName(param));
+    const block = llvm.BasicBlock.Create(this.context, `entry${this.getUniqueId()}`, func);
     const savedBuilder = this.builder;
     const savedCurrentFunction = this.currentFunction;
     this.builder = new llvm.IRBuilder(this.context);
@@ -146,6 +147,7 @@ class LLVMGenerator {
   visit_ReturnNode(node) {
     const value = this.visit(node.expr);
     this.builder.CreateRet(value);
+    this.builder.SetInsertPoint(null);  
   }
 
   visit_LetNode(node) {
@@ -249,8 +251,8 @@ visit_AssignmentNode(node) {
     const cmp = this.builder.CreateICmpEQ(result, zeroVal, 'cmptmp');
 
     const func = this.module.getFunction(this.currentFunction) || this.module.getFunction('main');
-    const thenBlock = llvm.BasicBlock.Create(this.context, 'input_fail', func);
-    const mergeBlock = llvm.BasicBlock.Create(this.context, 'input_cont', func);
+    const thenBlock = llvm.BasicBlock.Create(this.context, `input_fail${this.getUniqueId()}`, func);
+    const mergeBlock = llvm.BasicBlock.Create(this.context, `input_cont${this.getUniqueId()}`, func);
     this.builder.CreateCondBr(cmp, thenBlock, mergeBlock);
 
     this.builder.SetInsertPoint(thenBlock);
@@ -274,43 +276,59 @@ visit_AssignmentNode(node) {
     this.builder.SetInsertPoint(mergeBlock);
   }
 
-  visit_IfNode(node) {
-    const cond = this.visit(node.condition);
-    const func = this.module.getFunction(this.currentFunction) || this.module.getFunction('main');
-    const thenBlock = llvm.BasicBlock.Create(this.context, 'then', func);
-    const elseBlock = node.else_block ? llvm.BasicBlock.Create(this.context, 'else', func) : null;
-    const mergeBlock = llvm.BasicBlock.Create(this.context, 'if_cont', func);
+ visit_IfNode(node) {
+    const condV = this.visit(node.condition);
+    const fn = this.module.getFunction(this.currentFunction) || this.module.getFunction('main');
+    const thenBB = llvm.BasicBlock.Create(this.context, `then${this.getUniqueId()}`, fn);
+    const elseBB = node.else_block ? llvm.BasicBlock.Create(this.context, `else${this.getUniqueId()}`, fn) : null;
+    const contBB = llvm.BasicBlock.Create(this.context, `ifcont${this.getUniqueId()}`, fn);
 
-    const doubleTy = llvm.Type.getDoubleTy(this.context);
-    const zero = llvm.ConstantFP.get(doubleTy, 0.0);
-    const condBool = this.builder.CreateFCmpONE(cond, zero, 'ifcond');
-    this.builder.CreateCondBr(condBool, thenBlock, node.else_block ? elseBlock : mergeBlock);
+    const zero = llvm.ConstantFP.get(llvm.Type.getDoubleTy(this.context), 0.0);
+    const cmp = this.builder.CreateFCmpONE(condV, zero, `cmp${this.getUniqueId()}`);
+    this.builder.CreateCondBr(cmp, thenBB, elseBB || contBB);
 
-    this.builder.SetInsertPoint(thenBlock);
+    this.builder.SetInsertPoint(thenBB);
+    let thenHasReturn = false;
     for (const stmt of node.then_block) {
-      this.visit(stmt);
-    }
-    this.builder.CreateBr(mergeBlock);
-
-    if (node.else_block) {
-      this.builder.SetInsertPoint(elseBlock);
-      for (const stmt of node.else_block) {
         this.visit(stmt);
-      }
-      this.builder.CreateBr(mergeBlock);
+        if (stmt instanceof ReturnNode) {
+            thenHasReturn = true;
+            break;
+        }
+    }
+    if (!thenHasReturn) {
+        this.builder.CreateBr(contBB);
+    }
+     let elseHasReturn = false;
+    if (elseBB) {
+        this.builder.SetInsertPoint(elseBB);
+        for (const stmt of node.else_block) {
+            this.visit(stmt);
+            if(stmt instanceof ReturnNode) {
+                elseHasReturn = true;
+                break;
+            }
+        }
+        if (!elseHasReturn) {
+            this.builder.CreateBr(contBB);
+        }
     }
 
-    this.builder.SetInsertPoint(mergeBlock);
-  }
+    // Only set insertion point to contBB if it will be used
+    if (!thenHasReturn || !elseBB || (elseBB && !elseHasReturn)) {
+        this.builder.SetInsertPoint(contBB);
+    }
+}
+
 
   visit_WhileNode(node) {
     const func = this.module.getFunction(this.currentFunction) || this.module.getFunction('main');
-    const condBlock = llvm.BasicBlock.Create(this.context, 'while_cond', func);
-    const bodyBlock = llvm.BasicBlock.Create(this.context, 'while_body', func);
-    const mergeBlock = llvm.BasicBlock.Create(this.context, 'while_cont', func);
+    const condBB = llvm.BasicBlock.Create(this.context, `while_cond${this.getUniqueId()}`, func);
+    const bodyBlock = llvm.BasicBlock.Create(this.context, `while_body${this.getUniqueId()}`, func);
+    const mergeBlock = llvm.BasicBlock.Create(this.context, `while_cont${this.getUniqueId()}`, func);
 
-    this.builder.CreateBr(condBlock);
-    this.builder.SetInsertPoint(condBlock);
+    this.builder.CreateBr(condBB);
+    this.builder.SetInsertPoint(condBB);
     const cond = this.visit(node.condition);
     const doubleTy = llvm.Type.getDoubleTy(this.context);
     const zero = llvm.ConstantFP.get(doubleTy, 0.0);
@@ -323,7 +341,7 @@ visit_AssignmentNode(node) {
       this.visit(stmt);
     }
     this.loopExitBlocks.pop();
-    this.builder.CreateBr(condBlock);
+    this.builder.CreateBr(condBB);
 
     this.builder.SetInsertPoint(mergeBlock);
   }
@@ -332,32 +350,32 @@ visit_AssignmentNode(node) {
     this.visit(node.init);
 
     const func = this.module.getFunction(this.currentFunction) || this.module.getFunction('main');
-    const condBlock = llvm.BasicBlock.Create(this.context, 'for_cond', func);
-    const bodyBlock = llvm.BasicBlock.Create(this.context, 'for_body', func);
-    const incrBlock = llvm.BasicBlock.Create(this.context, 'for_incr', func);
-    const mergeBlock = llvm.BasicBlock.Create(this.context, 'for_cont', func);
+    const condBB = llvm.BasicBlock.Create(this.context, `for_cond${this.getUniqueId()}`, func);
+    const bodyBB = llvm.BasicBlock.Create(this.context, `for_body${this.getUniqueId()}`, func);
+    const incrBB = llvm.BasicBlock.Create(this.context, `for_incr${this.getUniqueId()}`, func);
+    const contBB = llvm.BasicBlock.Create(this.context, `for_cont${this.getUniqueId()}`, func);
 
-    this.builder.CreateBr(condBlock);
-    this.builder.SetInsertPoint(condBlock);
+    this.builder.CreateBr(condBB);
+    this.builder.SetInsertPoint(condBB);
     const cond = this.visit(node.condition);
     const doubleTy = llvm.Type.getDoubleTy(this.context);
     const zero = llvm.ConstantFP.get(doubleTy, 0.0);
     const condBool = this.builder.CreateFCmpONE(cond, zero, 'forcond');
-    this.builder.CreateCondBr(condBool, bodyBlock, mergeBlock);
+    this.builder.CreateCondBr(condBool, bodyBB, contBB);
 
-    this.builder.SetInsertPoint(bodyBlock);
-    this.loopExitBlocks.push(mergeBlock);
+    this.builder.SetInsertPoint(bodyBB);
+    this.loopExitBlocks.push(contBB);
     for (const stmt of node.body) {
       this.visit(stmt);
     }
     this.loopExitBlocks.pop();
-    this.builder.CreateBr(incrBlock);
+    this.builder.CreateBr(incrBB);
 
-    this.builder.SetInsertPoint(incrBlock);
+    this.builder.SetInsertPoint(incrBB);
     this.visit(node.increment);
-    this.builder.CreateBr(condBlock);
+    this.builder.CreateBr(condBB);
 
-    this.builder.SetInsertPoint(mergeBlock);
+    this.builder.SetInsertPoint(contBB);
   }
 
   visit_BreakNode() {
@@ -369,8 +387,8 @@ visit_AssignmentNode(node) {
     this.builder.CreateBr(exitBlock);
     
     const func = this.module.getFunction(this.currentFunction) || this.module.getFunction('main');
-    const afterBreak = llvm.BasicBlock.Create(this.context, 'after_break', func);
-    this.builder.SetInsertPoint(afterBreak);
+    const afterBB = llvm.BasicBlock.Create(this.context, `after_break${this.getUniqueId()}`, func);
+    this.builder.SetInsertPoint(afterBB);
   }
 
  visit_BinOpNode(node) {

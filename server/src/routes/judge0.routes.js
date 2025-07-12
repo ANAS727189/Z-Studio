@@ -16,7 +16,7 @@ const judge0Limiter = rateLimit({
 });
 
 router.post('/compile', judge0Limiter, validate(judge0Schema), compileCode);
-router.get('/status', judge0Limiter, checkJudge0Status);
+router.get('/system-info', judge0Limiter, checkJudge0Status);
 
 
 export default router;
