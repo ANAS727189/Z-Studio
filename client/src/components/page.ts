@@ -6,6 +6,10 @@ import CTA from './sections/CTA'
 import Footer from './Layout/Footer'
 import Navbar from './Layout/Navbar'
 import FuzzyText from './custom-ui/FuzzyText'
+import InputBox from './Layout/InputBox'
+import OutputBox from './Layout/OutputBox'
+import RunBar from './Layout/RunBar'
+import CodeEditorBox from './Layout/CodeEditorBox'
 
 
 export {
@@ -16,5 +20,9 @@ export {
     CTA,
     Footer,
     Navbar,
-    FuzzyText
+    FuzzyText,
+    InputBox,
+    OutputBox,
+    RunBar,
+    CodeEditorBox
 }

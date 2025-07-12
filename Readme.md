@@ -1,6 +1,5 @@
 
 # Z-studio
-
 **Z-studio** is a complete development ecosystem for the Z-- programming language. Built by developers, for developers, it combines a simple syntax with a powerful compiler and a modern web-based editor — all in one unified project.
 
 ## ✨ Features
