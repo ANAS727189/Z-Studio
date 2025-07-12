@@ -3,12 +3,14 @@ import { compileCode, checkJudge0Status } from "../controllers/judge0.controller
 import rateLimit from 'express-rate-limit';
 import { judge0Schema } from "../schema/judge0.zod.schema.js";
 import { validate } from "../middlewares/validate.zod.middleware.js";
+import dotenv from "dotenv";
+dotenv.config();
 
 const router = express.Router();
 
 const judge0Limiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 10,             // max 10 requests per minute per IP
+  windowMs: process.env.WINDOW_MS,
+  max: process.env.MAX_WINDOW_MS,
   message: {
     success: false,
     error: 'Too many requests, please try again later.',
