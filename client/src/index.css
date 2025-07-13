@@ -3,6 +3,8 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+
+
 /* .winky-rough-<uniquifier> {
   font-family: "Winky Rough", sans-serif;
   font-optical-sizing: auto;
@@ -226,6 +228,33 @@
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.551 0.027 264.364);
 }
+
+@layer utilities {
+  @keyframes meteor {
+    0% {
+      transform: rotate(215deg) translateX(0);
+      opacity: 1;
+    }
+    70% {
+      opacity: 1;
+    }
+    100% {
+      transform: rotate(215deg) translateX(-500px);
+      opacity: 0;
+    }
+  }
+
+  .animate-meteor-effect {
+    animation: meteor 5s linear infinite;
+  }
+   .bg-dot-pattern {
+    background-image: radial-gradient(circle, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+}
+
+
+
 
 @layer base {
   * {
