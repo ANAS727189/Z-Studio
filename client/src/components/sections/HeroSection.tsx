@@ -1,62 +1,69 @@
 import { motion } from "framer-motion";
 import { ArrowRight, Play, Code} from "lucide-react";
 import { LampContainer } from "../ui/lamp";
+import TrueFocus from "../custom-ui/TrueFocus";
+import { useNavigate } from "react-router-dom";
 
 const HeroSection = () => {
+  const navigate = useNavigate();
   return (
     <div className="relative">
       <LampContainer>
         {/* Floating code snippets background */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <motion.div
-            initial={{ opacity: 0, x: -100 }}
-            whileInView={{ opacity: 0.1, x: 0 }}
-            transition={{ delay: 1.2, duration: 2 }}
-            className="absolute top-30 left-10 text-cyan-400 font-mono text-sm"
-          >
-            {'<code_without_ai>'}
-          </motion.div>
-          <motion.div
-            initial={{ opacity: 0, x: 100 }}
-            whileInView={{ opacity: 0.1, x: 0 }}
-            transition={{ delay: 1.4, duration: 2 }}
-            className="absolute top-32 right-16 text-blue-400 font-mono text-sm"
-          >
-            {'function say_no_to_cringe()'}
-          </motion.div>
-          <motion.div
-            initial={{ opacity: 0, y: 50 }}
-            whileInView={{ opacity: 0.1, y: 0 }}
-            transition={{ delay: 1.6, duration: 2 }}
-            className="absolute bottom-40 left-2 text-slate-400 font-mono text-sm"
-          >
-            {'{ return 0; }'}
-          </motion.div>
-           <motion.div
-            initial={{ opacity: 0, y: 50 }}
-            whileInView={{ opacity: 0.1, y: 0 }}
-            transition={{ delay: 1.6, duration: 2 }}
-            className="absolute bottom-50 right-20 text-slate-400 font-mono text-sm"
-          >
-            {'{ import z--; }'}
-          </motion.div>
-           <motion.div
-            initial={{ opacity: 0, y: 50 }}
-            whileInView={{ opacity: 0.1, y: 0 }}
-            transition={{ delay: 1.6, duration: 2 }}
-            className="absolute bottom-10 right-20 text-slate-400 font-mono text-sm"
-          >
-            {'{ start_coding() }'}
-          </motion.div>
-           <motion.div
-            initial={{ opacity: 0, y: 50 }}
-            whileInView={{ opacity: 0.1, y: 0 }}
-            transition={{ delay: 1.6, duration: 2 }}
-            className="absolute bottom-20 left-20 text-slate-400 font-mono text-sm"
-          >
-            {'{ no_shitpost() }'}
-          </motion.div>
+       <div className="absolute top-0 left-0 right-0 bottom-0 overflow-hidden pointer-events-none">
+          {[
+            { text: '<code_without_ai>', style: 'text-cyan-400', x: 'left-[5%]', y: 'top-[8%]', delay: 1.2 },
+            { text: '{ return 0; }', style: 'text-slate-400', x: 'left-[8%]', y: 'top-[65%]', delay: 1.6 },
+            { text: '{ no_shitpost() }', style: 'text-slate-400', x: 'left-[12%]', y: 'bottom-[18%]', delay: 2.2 },
+            { text: '#include <z--.h>', style: 'text-amber-400', x: 'left-[3%]', y: 'top-[35%]', delay: 3.6 },
+            { text: 'function say_no_to_cringe()', style: 'text-blue-400', x: 'right-[5%]', y: 'top-[10%]', delay: 1.4 },
+            { text: 'const focus = true;', style: 'text-pink-400', x: 'right-[12%]', y: 'top-[45%]', delay: 2.2 },
+            { text: '{ import z--; }', style: 'text-slate-400', x: 'right-[8%]', y: 'top-[60%]', delay: 1.8 },
+            { text: '{ start_coding() }', style: 'text-slate-400', x: 'right-[6%]', y: 'bottom-[20%]', delay: 2.0 },
+            { text: '// Zero BS coding', style: 'text-lime-400', x: 'right-[3%]', y: 'bottom-[35%]', delay: 2.8 },
+            { text: '// Just pure code', style: 'text-cyan-300', x: 'right-[15%]', y: 'top-[28%]', delay: 4.0 },
+            { text: '// No more bloat', style: 'text-green-400', x: 'left-[25%]', y: 'top-[15%]', delay: 1.6 },
+            { text: '// Clean & Fast', style: 'text-sky-400', x: 'left-[20%]', y: 'top-[50%]', delay: 3.2 },
+            { text: 'printf("Hello Z--!");', style: 'text-indigo-400', x: 'left-[18%]', y: 'bottom-[25%]', delay: 2.4 },
+            { text: 'var productivity = ∞;', style: 'text-emerald-400', x: 'right-[25%]', y: 'top-[55%]', delay: 3.4 },
+            { text: 'compile.instantly();', style: 'text-rose-400', x: 'left-1/2 -translate-x-1/2', y: 'bottom-[15%]', delay: 3.8 }
+          ].map((item, index) => (
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, y: 60, rotate: 8 }}
+              whileInView={{ opacity: 0.1, y: 0, rotate: 0 }}
+              transition={{ delay: item.delay, duration: 2 }}
+              className={`absolute ${item.x} ${item.y} font-mono text-[clamp(8px,1vw,12px)] sm:text-[clamp(10px,1.2vw,14px)] ${item.style} 
+                         hidden sm:block`}
+            >
+              {item.text}
+            </motion.div>
+          ))}
+          
+          {/* Mobile-optimized floating elements */}
+          {[
+            { text: '<code/>', style: 'text-cyan-400', x: 'left-[10%]', y: 'top-[10%]', delay: 1.2 },
+            { text: '{ focus }', style: 'text-pink-400', x: 'right-[10%]', y: 'top-[15%]', delay: 1.4 },
+            { text: '// Fast', style: 'text-lime-400', x: 'left-[15%]', y: 'top-[70%]', delay: 2.0 },
+            { text: 'Z--', style: 'text-cyan-300', x: 'right-[15%]', y: 'top-[65%]', delay: 2.2 },
+            { text: '∞', style: 'text-emerald-400', x: 'left-[70%]', y: 'top-[25%]', delay: 2.8 },
+            { text: '{}', style: 'text-blue-400', x: 'right-[70%]', y: 'bottom-[20%]', delay: 3.0 },
+            { text: '()', style: 'text-purple-400', x: 'left-[60%]', y: 'bottom-[25%]', delay: 1.8 },
+            { text: '[]', style: 'text-orange-400', x: 'right-[60%]', y: 'top-[40%]', delay: 2.4 },
+          ].map((item, index) => (
+            <motion.div
+              key={`mobile-${index}`}
+              initial={{ opacity: 0, y: 40, rotate: 5 }}
+              whileInView={{ opacity: 0.15, y: 0, rotate: 0 }}
+              transition={{ delay: item.delay, duration: 1.5 }}
+              className={`absolute ${item.x} ${item.y} font-mono text-lg ${item.style} 
+                         block sm:hidden`}
+            >
+              {item.text}
+            </motion.div>
+          ))}
         </div>
+
 
         {/* Main title with enhanced styling */}
         <motion.div
@@ -70,10 +77,10 @@ const HeroSection = () => {
           className="text-center"
         >
           <h1 className="mt-8 text-center text-5xl font-bold tracking-tight md:text-7xl lg:text-8xl" style={{ fontFamily: 'Winky Rough, Poppins, sans-serif' }}>
-            {/* <span className="relative inline-block"> */}
+            <span className="relative inline-block">
               Z Studio
              
-            {/* </span> */}
+            </span>
           </h1>
           
           <div className="mt-6 relative z-60">
@@ -85,16 +92,16 @@ const HeroSection = () => {
             >
             </motion.div>
             
-          <p className="text-2xl md:text-4xl font-bold bg-gradient-to-r from-cyan-300 via-blue-400 to-purple-500 bg-clip-text text-transparent underline decoration-wavy" style={{ fontFamily: 'Poppins, sans-serif' }}>
-            No Auth Web IDE
+          <p className="text-2xl md:text-4xl font-bold text-cyan-300" style={{ fontFamily: 'Poppins, sans-serif' }}>
+            <TrueFocus 
+              sentence="No Auth Web IDE" 
+            manualMode={false}
+              blurAmount={5}
+              borderColor="blue"
+            animationDuration={2}
+            pauseBetweenAnimations={1}
+            />
           </p>
-                
-            {/* <motion.div
-              initial={{ width: 0 }}
-              whileInView={{ width: "100%" }}
-              transition={{ delay: 1.2, duration: 0.8 }}
-              className="mt-3 h-px bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent"
-            /> */}
           </div>
         </motion.div>
 
@@ -129,7 +136,7 @@ const HeroSection = () => {
           >
             <div className="absolute inset-0 bg-gradient-to-r from-cyan-600 to-blue-700 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            <span className="relative z-10 flex items-center gap-3 text-lg">
+            <span className="relative z-10 flex items-center gap-3 text-lg cursor-pointer" onClick={() => navigate('/z-studio/code-editor')}>
               <Code className="w-5 h-5" />
               Start Coding Now
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
