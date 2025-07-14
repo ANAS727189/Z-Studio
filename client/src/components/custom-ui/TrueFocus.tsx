@@ -154,8 +154,8 @@ const TrueFocus: React.FC<TrueFocusProps> = ({
             <motion.div
                 className="absolute pointer-events-none hidden sm:block"
                 animate={{
-                    x: focusRect.x - 168, 
-                    y: focusRect.y + focusRect.height - 2, 
+                    x: focusRect.x - 172, 
+                    y: focusRect.y + focusRect.height - 15, 
                     width: focusRect.width,
                     opacity: currentIndex >= 0 ? 1 : 0,
                 }}
