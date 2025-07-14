@@ -4,10 +4,20 @@ import { LampContainer } from "../ui/lamp";
 import TrueFocus from "../custom-ui/TrueFocus";
 import { useNavigate } from "react-router-dom";
 import SplashCursor from "../custom-ui/SplashCursor";
+import { useState } from "react";
 
 
 const HeroSection = () => {
   const navigate = useNavigate();
+  const [cnt, setCnt] = useState(0);
+  const demoFunction = () => {
+    setCnt(cnt + 1);
+    if(cnt&1) {
+      window.open('https://www.youtube.com', '_blank');
+    }else {
+      window.open('https://github.com/ANAS727189/Z-Studio', '_blank');
+    }
+  }
   return (
     <div className="relative min-h-screen overflow-hidden">
       <SplashCursor />
@@ -147,7 +157,7 @@ const HeroSection = () => {
             
             <button
               onClick={() => navigate('/z-studio/code-editor')}
-              className="relative px-12 py-6 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold rounded-3xl overflow-hidden shadow-2xl transform hover:shadow-cyan-500/50 transition-all duration-300 border-2 border-cyan-400/30"
+              className="relative cursor-pointer px-12 py-6 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold rounded-3xl overflow-hidden shadow-2xl transform hover:shadow-cyan-500/50 transition-all duration-300 border-2 border-cyan-400/30"
               style={{ fontFamily: 'Poppins, sans-serif' }}
             >
               <div className="absolute inset-0 bg-gradient-to-r from-cyan-600 to-blue-700 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -163,20 +173,25 @@ const HeroSection = () => {
           <motion.button
             whileHover={{ scale: 1.05, rotate: -1 }}
             whileTap={{ scale: 0.95 }}
-            className="group relative px-10 py-6 bg-transparent border-2 border-slate-600 text-slate-300 font-bold rounded-full hover:bg-slate-800/50 hover:border-purple-500/50 transition-all duration-300 shadow-lg backdrop-blur-sm overflow-hidden"
+            onClick={() => demoFunction()}
+            className="group cursor-pointer relative px-10 py-6 bg-transparent border-2 border-slate-600 text-slate-300 font-bold rounded-full hover:bg-slate-800/50 hover:border-purple-500/50 transition-all duration-300 shadow-lg backdrop-blur-sm overflow-hidden"
             style={{ fontFamily: 'Poppins, sans-serif' }}
           >
             <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-pink-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             <span className="relative z-10 flex items-center gap-3 text-lg">
               <div className="relative">
-                <Play className="w-5 h-5 group-hover:text-purple-400 transition-colors duration-300" />
+                {`${cnt & 1 ? 
+                <Play className="w-5 h-5 group-hover:text-purple-400 transition-colors duration-300" /> 
+                : ""}`}
                 <motion.div
                   initial={{ scale: 0 }}
                   whileHover={{ scale: 1.5 }}
-                  className="absolute inset-0 bg-purple-400/20 rounded-full"
+                  className="absolute inset-0 bg-purple-400/20 rounded-full cursor-pointer"
                 />
               </div>
-              Watch Demo
+              {`${
+                cnt & 1 ? "⭐ this repo on Github" : "Watch a demo"
+              }`}
             </span>
           </motion.button>
         </motion.div>
