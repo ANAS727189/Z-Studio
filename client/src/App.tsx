@@ -1,6 +1,5 @@
 import { Route, Routes } from "react-router-dom"
 import {LandingPage, CodeEditorPage, NotFound} from "./pages/page.ts"
-import { Footer} from "./components/page.ts"
 
 function App() {
  return (
@@ -11,7 +10,6 @@ function App() {
             <Route path="/z-studio/code-editor" element = {<CodeEditorPage />}/>
             <Route path="*" element={<NotFound />}/>
         </Routes>
-    <Footer />
    </div>
   </>
  )

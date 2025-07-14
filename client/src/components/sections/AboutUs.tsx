@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import { motion, useInView } from 'framer-motion';
-import { User, Heart, Github, Linkedin, Mail, Code, Zap, Star } from 'lucide-react';
+import { User, Heart, Code, Zap, Star } from 'lucide-react';
 
 const AboutUs = () => {
   const sectionRef = useRef(null);
@@ -178,7 +178,7 @@ const AboutUs = () => {
           >
             <div className="relative">
               {/* Creative Image Frame */}
-              <div className="relative overflow-hidden rounded-2xl border-4 border-gradient-to-br from-cyan-400/50 to-purple-500/50 bg-gradient-to-br from-cyan-400/10 to-purple-500/10 p-2">
+              <div className="relative overflow-hidden rounded-2xl border-4 border-gradient-to-br from-cyan-400/50 to-purple-500/50 bg-gradient-to-br p-2">
                 <motion.div
                   whileHover={{ scale: 1.05 }}
                   transition={{ duration: 0.3 }}
@@ -230,7 +230,7 @@ const AboutUs = () => {
             >
               <Code className="w-4 h-4 text-cyan-400" />
             </motion.div>
-            <span className="text-sm text-slate-400">Building the future, one line at a time</span>
+            <span className="text-sm text-slate-400">Racing to redefine the top.</span>
           </div>
         </motion.div>
       </div>
