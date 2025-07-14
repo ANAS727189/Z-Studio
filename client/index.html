@@ -8,6 +8,17 @@
   </head>
   <body>
     <div id="root"></div>
+     <script>
+    window.addEventListener('error', function (ev) {
+      const f = ev.filename || '';
+      if (f.includes('lockdown-install.js') ||
+          f.includes('lockdown-more.js')    ||
+          f.includes('lockdown-run.js')) {
+        ev.stopImmediatePropagation();
+        ev.preventDefault();
+      }
+    }, /* useCapture = */ true);
+  </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
