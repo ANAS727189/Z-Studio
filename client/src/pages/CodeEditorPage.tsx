@@ -37,7 +37,8 @@ const CodeEditorPage = () => {
 
   const handleLanguageChange = useCallback((lang: string) => {
     setSelectedLanguage(lang);
-    // Don't reset code automatically - let user decide
+    // Reset code to trigger default code loading in CodeEditorBox
+    setCode('');
     setOutput('');
     setError('');
   }, []);
@@ -52,7 +53,7 @@ const CodeEditorPage = () => {
 
   // Memoize the layout to prevent unnecessary re-renders
   const editorLayout = useMemo(() => (
-  <div className="flex-1 p-4 grid grid-cols-1 lg:grid-cols-2 gap-4 min-h-0">
+    <div className="flex-1 p-6 grid grid-cols-1 lg:grid-cols-2 gap-6 min-h-0">
       {/* Left Column - Code Editor */}
       <div className="flex flex-col flex-1 min-h-0">
         <CodeEditorBox 
@@ -63,7 +64,7 @@ const CodeEditorPage = () => {
       </div>
       
       {/* Right Column - Input/Output */}
-      <div className="flex flex-col space-y-4 min-h-0">
+      <div className="flex flex-col space-y-6 min-h-0">
         <div className="flex-1">
           <InputBox 
             input={input}
@@ -83,7 +84,7 @@ const CodeEditorPage = () => {
   ), [selectedLanguage, code, input, output, isCompiling, error, handleCodeChange, handleInputChange]);
 
   return (
-    <div className="h-screen flex flex-col bg-gray-100 overflow-hidden">
+    <div className="h-screen flex flex-col bg-[#060111] overflow-hidden">
       <Navbar />
       
       <RunBar 
