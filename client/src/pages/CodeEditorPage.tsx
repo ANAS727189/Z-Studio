@@ -75,7 +75,7 @@ const CodeEditorPage = () => {
       } else {
         const language_id = languageIdMap[language];
         if (!language_id) {
-          throw new Error(`No Judge0 mapping for language “${language}”`);
+          throw new Error(`No Judge0 mapping for language "${language}"`);
         }
         const res = await axiosInstance.post('/judge0/compile', {
           language_id,
@@ -100,7 +100,7 @@ const CodeEditorPage = () => {
 
   const handleChangeActiveFileLanguage = useCallback((newLanguage: LanguageKey) => {
     setFiles(prevFiles => {
-      const oldFile = prevFiles[activeFile];
+      // const oldFile = prevFiles[activeFile];
       const newExtension = fileExtensionMap[newLanguage];
       const oldExtension = activeFile.split('.').pop();
       let newFileName = activeFile;
@@ -159,8 +159,8 @@ const CodeEditorPage = () => {
   }, [activeFile]);
 
   const editorLayout = useMemo(() => (
-    <div className="flex-1 p-6 grid grid-cols-1 md:grid-cols-3 gap-6 min-h-0">
-      <div className="col-span-1 md:col-span-2 flex flex-col min-h-0">
+    <div className="flex-1 p-3 sm:p-6 grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-6 min-h-0">
+      <div className="col-span-1 lg:col-span-2 flex flex-col min-h-0">
         <CodeEditorBox
           activeLanguage={files[activeFile]?.language || 'cpp'}
           files={files}
@@ -178,11 +178,11 @@ const CodeEditorPage = () => {
           onAddFile={handleAddFile}
         />
       </div>
-      <div className="col-span-1 flex flex-col gap-6 min-h-0">
-        <div className="flex-1 min-h-0">
+      <div className="col-span-1 flex flex-col lg:grid lg:grid-rows-2 gap-3 sm:gap-6 min-h-0">
+        <div className="flex-1 min-h-0 h-64 sm:h-auto">
           <InputBox input={input} onChange={setInput} />
         </div>
-        <div className="flex-1 min-h-0">
+        <div className="flex-1 min-h-0 h-64 sm:h-auto">
           <OutputBox
             output={output}
             isLoading={isCompiling}

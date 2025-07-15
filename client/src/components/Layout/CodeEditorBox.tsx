@@ -212,27 +212,28 @@ const CodeEditorBox: React.FC<CodeEditorBoxProps> = ({
     <Card className={`h-full bg-[#0a0a0f] border-[#1a1a24] shadow-2xl overflow-hidden transition-all duration-200 ${isFullscreen ? 'fixed inset-0 z-50' : ''}`}>
       <CardHeader className="bg-gradient-to-r from-[#0f0f17] to-[#1a1a24] border-b border-[#1a1a24] pb-0">
         <div className="flex items-center justify-between py-2">
-          <div className="flex items-center space-x-3">
-            <div className="flex items-center space-x-2">
-              <Code2 className="w-5 h-5 text-purple-400" />
-              <h3 className="text-lg font-semibold text-gray-100 tracking-tight">Z Studio Editor</h3>
+          <div className="flex items-center space-x-1 sm:space-x-3">
+            <div className="flex items-center space-x-1 sm:space-x-2">
+              <Code2 className="w-4 h-4 sm:w-5 sm:h-5 text-purple-400" />
+              <h3 className="text-sm sm:text-lg font-semibold text-gray-100 tracking-tight">Z Studio Editor</h3>
             </div>
-            <div className="flex items-center space-x-1">
+            <div className="flex items-center space-x-1 sm:flex">
               <div className="w-3 h-3 rounded-full bg-red-400 hover:bg-red-300 cursor-pointer transition-colors"></div>
               <div className="w-3 h-3 rounded-full bg-yellow-400 hover:bg-yellow-300 cursor-pointer transition-colors"></div>
               <div className="w-3 h-3 rounded-full bg-green-400 hover:bg-green-300 cursor-pointer transition-colors"></div>
             </div>
           </div>
-          <div className="flex items-center space-x-3">
-            <Badge variant="outline" className="bg-purple-900/20 text-purple-400 border-purple-400/30 font-mono text-sm px-3 py-1">
-              {languageLabels[activeLanguage as keyof typeof languageLabels] || activeLanguage.toUpperCase()}
+          <div className="flex items-center space-x-2 sm:space-x-3">
+            <Badge variant="outline" className="bg-purple-900/20 text-purple-400 border-purple-400/30 font-mono text-xs sm:text-sm px-2 sm:px-3 py-1">
+              <span className="sm:hidden">{activeLanguage.toUpperCase()}</span>
+              <span className="hidden sm:inline">{languageLabels[activeLanguage as keyof typeof languageLabels] || activeLanguage.toUpperCase()}</span>
             </Badge>
-            <div className="flex items-center space-x-1">
+            <div className="flex items-center space-x-1 sm:flex">
               <Activity className="w-4 h-4 text-green-400" />
               <span className="text-xs text-green-400">Ready</span>
             </div>
             {!isEditorReady && (
-              <Loader2 className="w-4 h-4 text-purple-400 animate-spin" />
+              <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 text-purple-400 animate-spin" />
             )}
           </div>
         </div>
@@ -241,16 +242,16 @@ const CodeEditorBox: React.FC<CodeEditorBoxProps> = ({
             {Object.keys(files).map(file => (
               <div
                 key={file}
-                className={`flex items-center px-4 py-2 rounded-t-lg cursor-pointer ${activeFile === file ? 'bg-[#1a1a24] border-b-2 border-purple-500' : 'bg-[#0f0f17] hover:bg-[#141421]'}`}
+                className={`flex items-center px-2 sm:px-4 py-2 rounded-t-lg cursor-pointer ${activeFile === file ? 'bg-[#1a1a24] border-b-2 border-purple-500' : 'bg-[#0f0f17] hover:bg-[#141421]'}`}
                 onClick={() => setActiveFile(file)}
               >
-                <FileText className=" Gw-4 h-4 text-gray-400 mr-2" />
-                <span className="text-sm text-gray-200">{file}</span>
-                {activeFile === file && <div className="w-2 h-2 bg-purple-400 rounded-full ml-2"></div>}
+                <FileText className="w-3 h-3 sm:w-4 sm:h-4 text-gray-400 mr-1 sm:mr-2" />
+                <span className="text-xs sm:text-sm text-gray-200">{file}</span>
+                {activeFile === file && <div className="w-2 h-2 bg-purple-400 rounded-full ml-1 sm:ml-2"></div>}
               </div>
             ))}
             <div
-              className="flex items-center px-4 py-2 text-gray-500 hover:text-gray-300 cursor-pointer transition-colors"
+              className="flex items-center px-2 sm:px-4 py-2 text-gray-500 hover:text-gray-300 cursor-pointer transition-colors"
               onClick={onAddFile}
             >
               <span className="text-sm">+</span>
@@ -261,7 +262,7 @@ const CodeEditorBox: React.FC<CodeEditorBoxProps> = ({
               variant="ghost" 
               size="sm" 
               onClick={() => setShowExplorer(!showExplorer)}
-              className={`h-8 px-3 text-xs cursor-pointer hover:bg-[#1a1a24] transition-colors ${showExplorer ? 'text-purple-400 bg-[#1a1a24]' : 'text-gray-400 hover:text-gray-200'}`}
+              className={`h-6 sm:h-8 px-2 sm:px-3 text-xs cursor-pointer hover:bg-[#1a1a24] transition-colors ${showExplorer ? 'text-purple-400 bg-[#1a1a24]' : 'text-gray-400 hover:text-gray-200'} hidden sm:flex`}
             >
               <FolderOpen className="w-3 h-3 mr-1" />
               Explorer
@@ -270,7 +271,7 @@ const CodeEditorBox: React.FC<CodeEditorBoxProps> = ({
               variant="ghost" 
               size="sm" 
               onClick={() => setIsFullscreen(!isFullscreen)}
-              className="h-8 px-3 text-xs text-gray-400 cursor-pointer hover:text-gray-200 hover:bg-[#1a1a24] transition-colors"
+              className="h-6 sm:h-8 px-2 sm:px-3 text-xs text-gray-400 cursor-pointer hover:text-gray-200 hover:bg-[#1a1a24] transition-colors"
             >
               {isFullscreen ? <Minimize2 className="w-3 h-3" /> : <Maximize2 className="w-3 h-3" />}
             </Button>
@@ -280,7 +281,7 @@ const CodeEditorBox: React.FC<CodeEditorBoxProps> = ({
       <CardContent className="p-0 h-full relative">
         <div className="flex h-full">
           {showExplorer && (
-            <div className="w-64 bg-[#0f0f17] border-r border-[#1a1a24] p-4">
+            <div className="w-64 bg-[#0f0f17] border-r border-[#1a1a24] p-4 hidden sm:block">
               <div className="flex items-center justify-between mb-4">
                 <h4 className="text-sm font-medium text-gray-200">Explorer</h4>
                 <Button 
@@ -310,8 +311,8 @@ const CodeEditorBox: React.FC<CodeEditorBoxProps> = ({
               </div>
             </div>
           )}
-          <div className="flex-1 flex flex-col">
-            <div className="flex-1">
+          <div className="flex-1 flex flex-col min-h-0">
+            <div className="flex-1 overflow-hidden">
               <Editor
                 height="100%"
                 language={getMonacoLanguage(activeLanguage)}
@@ -336,21 +337,21 @@ const CodeEditorBox: React.FC<CodeEditorBoxProps> = ({
             </div>
           </div>
         </div>
-        <div className="absolute bottom-0 left-0 right-0 bg-[#0f0f17] border-t border-[#1a1a24] px-4 py-2 z-10">
+        <div className="absolute bottom-0 left-0 right-0 bg-[#0f0f17] border-t border-[#1a1a24] px-2 sm:px-4 py-2 z-10">
           <div className="flex items-center justify-between text-xs">
-            <div className="flex items-center space-x-6">
-              <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 sm:space-x-6">
+              <div className="flex items-center space-x-1 sm:space-x-2">
                 <CheckCircle2 className="w-3 h-3 text-green-400" />
                 <span className="text-gray-400">Ready</span>
               </div>
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2 sm:space-x-4">
                 <span className="text-gray-400">Ln {currentLine}, Col {currentColumn}</span>
-                <span className="text-gray-400">UTF-8</span>
+                <span className="text-gray-400 hidden sm:inline">UTF-8</span>
                 <span className="text-purple-400 font-medium">{getMonacoLanguage(activeLanguage).toUpperCase()}</span>
               </div>
             </div>
-            <div className="flex items-center space-x-6">
-              <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 sm:space-x-6">
+              <div className="flex items-center space-x-2 sm:space-x-4 sm:flex">
                 <span className="text-gray-400">Spaces: 2</span>
                 <span className="text-gray-400">Tab Size: 2</span>
               </div>
