@@ -137,132 +137,279 @@ const Navbar = ({
               <Settings className="w-4 h-4 cursor-pointer" />
             </button>
             {isSettingsOpen && (
-              <div className="absolute right-0 top-10 bg-[#1a1a24] border border-[#2a2a34] rounded-lg shadow-xl z-20 w-64 p-4">
-                {/* Actions */}
-                <div className="mb-4">
-                  <h4 className="text-xs text-gray-500 mb-2">Actions</h4>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      handleCopy();
-                      setIsSettingsOpen(false);
-                    }}
-                    className="w-full justify-start text-xs text-gray-400 hover:text-gray-200 hover:bg-[#2a2a34]"
-                  >
-                    <Copy className="w-3 h-3 mr-2" />
-                    Copy Code
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      handleReset();
-                      setIsSettingsOpen(false);
-                    }}
-                    className="w-full justify-start text-xs text-gray-400 hover:text-gray-200 hover:bg-[#2a2a34]"
-                  >
-                    <RotateCcw className="w-3 h-3 mr-2" />
-                    Reset Code
-                  </Button>
-                </div>
-
-                {/* View Options */}
-                <div className="mb-4">
-                  <h4 className="text-xs text-gray-500 mb-2">View</h4>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowMinimap(!showMinimap)}
-                    className={`w-full justify-start text-xs ${showMinimap ? 'text-purple-400 bg-[#2a2a34]' : 'text-gray-400 hover:text-gray-200 hover:bg-[#2a2a34]'}`}
-                  >
-                    <Grid3x3 className="w-3 h-3 mr-2" />
-                    Minimap {showMinimap ? 'On' : 'Off'}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setWordWrap(!wordWrap)}
-                    className={`w-full justify-start text-xs ${wordWrap ? 'text-purple-400 bg-[#2a2a34]' : 'text-gray-400 hover:text-gray-200 hover:bg-[#2a2a34]'}`}
-                  >
-                    <WrapText className="w-3 h-3 mr-2" />
-                    Word Wrap {wordWrap ? 'On' : 'Off'}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setLineNumbers(!lineNumbers)}
-                    className={`w-full justify-start text-xs ${lineNumbers ? 'text-purple-400 bg-[#2a2a34]' : 'text-gray-400 hover:text-gray-200 hover:bg-[#2a2a34]'}`}
-                  >
-                    <FileText className="w-3 h-3 mr-2" />
-                    Line Numbers {lineNumbers ? 'On' : 'Off'}
-                  </Button>
-                </div>
-
-                {/* Font Size */}
-                <div className="mb-4">
-                  <h4 className="text-xs text-gray-500 mb-2">Font Size</h4>
-                  <div className="flex items-center space-x-2 px-3 py-1 bg-[#2a2a34] rounded-md">
-                    <Type className="w-3 h-3 text-gray-400" />
+              <div className="absolute right-0 top-10 bg-[#1a1a24] border border-[#2a2a34] rounded-lg shadow-xl z-20 w-64 md:w-[480px] p-4">
+                {/* Mobile Layout (Single Column) */}
+                <div className="md:hidden">
+                  {/* Actions */}
+                  <div className="mb-4">
+                    <h4 className="text-xs text-gray-500 mb-2">Actions</h4>
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => setFontSize(Math.max(10, fontSize - 1))}
-                      className="h-6 w-6 p-0 text-xs text-gray-400 hover:text-gray-200 hover:bg-[#3a3a44]"
+                      onClick={() => {
+                        handleCopy();
+                        setIsSettingsOpen(false);
+                      }}
+                      className="w-full justify-start text-xs text-gray-400 hover:text-gray-200 hover:bg-[#2a2a34]"
                     >
-                      -
+                      <Copy className="w-3 h-3 mr-2" />
+                      Copy Code
                     </Button>
-                    <span className="text-xs text-gray-400 w-8 text-center font-mono">{fontSize}</span>
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => setFontSize(Math.min(24, fontSize + 1))}
-                      className="h-6 w-6 p-0 text-xs text-gray-400 hover:text-gray-200 hover:bg-[#3a3a44]"
+                      onClick={() => {
+                        handleReset();
+                        setIsSettingsOpen(false);
+                      }}
+                      className="w-full justify-start text-xs text-gray-400 hover:text-gray-200 hover:bg-[#2a2a34]"
                     >
-                      +
+                      <RotateCcw className="w-3 h-3 mr-2" />
+                      Reset Code
                     </Button>
+                  </div>
+
+                  {/* View Options */}
+                  <div className="mb-4">
+                    <h4 className="text-xs text-gray-500 mb-2">View</h4>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowMinimap(!showMinimap)}
+                      className={`w-full justify-start text-xs ${showMinimap ? 'text-purple-400 bg-[#2a2a34]' : 'text-gray-400 hover:text-gray-200 hover:bg-[#2a2a34]'}`}
+                    >
+                      <Grid3x3 className="w-3 h-3 mr-2" />
+                      Minimap {showMinimap ? 'On' : 'Off'}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setWordWrap(!wordWrap)}
+                      className={`w-full justify-start text-xs ${wordWrap ? 'text-purple-400 bg-[#2a2a34]' : 'text-gray-400 hover:text-gray-200 hover:bg-[#2a2a34]'}`}
+                    >
+                      <WrapText className="w-3 h-3 mr-2" />
+                      Word Wrap {wordWrap ? 'On' : 'Off'}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setLineNumbers(!lineNumbers)}
+                      className={`w-full justify-start text-xs ${lineNumbers ? 'text-purple-400 bg-[#2a2a34]' : 'text-gray-400 hover:text-gray-200 hover:bg-[#2a2a34]'}`}
+                    >
+                      <FileText className="w-3 h-3 mr-2" />
+                      Line Numbers {lineNumbers ? 'On' : 'Off'}
+                    </Button>
+                  </div>
+
+                  {/* Font Size */}
+                  <div className="mb-4">
+                    <h4 className="text-xs text-gray-500 mb-2">Font Size</h4>
+                    <div className="flex items-center space-x-2 px-3 py-1 bg-[#2a2a34] rounded-md">
+                      <Type className="w-3 h-3 text-gray-400" />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setFontSize(Math.max(10, fontSize - 1))}
+                        className="h-6 w-6 p-0 text-xs text-gray-400 hover:text-gray-200 hover:bg-[#3a3a44]"
+                      >
+                        -
+                      </Button>
+                      <span className="text-xs text-gray-400 w-8 text-center font-mono">{fontSize}</span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setFontSize(Math.min(24, fontSize + 1))}
+                        className="h-6 w-6 p-0 text-xs text-gray-400 hover:text-gray-200 hover:bg-[#3a3a44]"
+                      >
+                        +
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Theme Selection */}
+                  <div>
+                    <h4 className="text-xs text-gray-500 mb-2">Theme</h4>
+                    <div className="relative">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full justify-start text-xs text-gray-400 hover:text-gray-200 hover:bg-[#2a2a34]"
+                      >
+                        <Palette className="w-3 h-3 mr-2" />
+                        {themeOptions.find(opt => opt.value === theme)?.label || 'Select Theme'}
+                        <ChevronDown className="w-3 h-3 ml-auto" />
+                      </Button>
+                      <div className="mt-1 max-h-40 overflow-y-auto bg-[#2a2a34] rounded-lg">
+                        {themeOptions.map((themeOption) => (
+                          <button
+                            key={themeOption.value}
+                            onClick={() => {
+                              setTheme(themeOption.value);
+                              setIsSettingsOpen(false);
+                            }}
+                            className={`w-full text-left px-3 py-2 text-xs hover:bg-[#3a3a44] transition-colors ${
+                              theme === themeOption.value ? 'text-purple-400 bg-[#3a3a44]' : 'text-gray-400'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center space-x-2">
+                                <div 
+                                  className="w-4 h-4 rounded border border-gray-600" 
+                                  style={{ backgroundColor: themeOption.bg }}
+                                ></div>
+                                <span>{themeOption.label}</span>
+                              </div>
+                              {theme === themeOption.value && (
+                                <CheckCircle2 className="w-3 h-3 text-purple-400" />
+                              )}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                {/* Theme Selection */}
-                <div>
-                  <h4 className="text-xs text-gray-500 mb-2">Theme</h4>
-                  <div className="relative">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="w-full justify-start text-xs text-gray-400 hover:text-gray-200 hover:bg-[#2a2a34]"
-                    >
-                      <Palette className="w-3 h-3 mr-2" />
-                      {themeOptions.find(opt => opt.value === theme)?.label || 'Select Theme'}
-                      <ChevronDown className="w-3 h-3 ml-auto" />
-                    </Button>
-                    <div className="mt-1 max-h-40 overflow-y-auto bg-[#2a2a34] rounded-lg">
-                      {themeOptions.map((themeOption) => (
-                        <button
-                          key={themeOption.value}
-                          onClick={() => {
-                            setTheme(themeOption.value);
-                            setIsSettingsOpen(false);
-                          }}
-                          className={`w-full text-left px-3 py-2 text-xs hover:bg-[#3a3a44] transition-colors ${
-                            theme === themeOption.value ? 'text-purple-400 bg-[#3a3a44]' : 'text-gray-400'
-                          }`}
-                        >
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-2">
-                              <div 
-                                className="w-4 h-4 rounded border border-gray-600" 
-                                style={{ backgroundColor: themeOption.bg }}
-                              ></div>
-                              <span>{themeOption.label}</span>
-                            </div>
-                            {theme === themeOption.value && (
-                              <CheckCircle2 className="w-3 h-3 text-purple-400" />
-                            )}
+                {/* Desktop Layout (Two Columns) */}
+                <div className="hidden md:block">
+                  <div className="grid grid-cols-2 gap-6">
+                    {/* Left Column */}
+                    <div className="space-y-4">
+                      {/* Actions */}
+                      <div>
+                        <h4 className="text-xs text-gray-500 mb-3 font-medium">Actions</h4>
+                        <div className="space-y-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              handleCopy();
+                              setIsSettingsOpen(false);
+                            }}
+                            className="w-full justify-start text-xs text-gray-400 hover:text-gray-200 hover:bg-[#2a2a34] h-8"
+                          >
+                            <Copy className="w-3 h-3 mr-2" />
+                            Copy Code
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              handleReset();
+                              setIsSettingsOpen(false);
+                            }}
+                            className="w-full justify-start text-xs text-gray-400 hover:text-gray-200 hover:bg-[#2a2a34] h-8"
+                          >
+                            <RotateCcw className="w-3 h-3 mr-2" />
+                            Reset Code
+                          </Button>
+                        </div>
+                      </div>
+
+                      {/* View Options */}
+                      <div>
+                        <h4 className="text-xs text-gray-500 mb-3 font-medium">View Options</h4>
+                        <div className="space-y-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setShowMinimap(!showMinimap)}
+                            className={`w-full justify-start text-xs h-8 ${showMinimap ? 'text-purple-400 bg-[#2a2a34]' : 'text-gray-400 hover:text-gray-200 hover:bg-[#2a2a34]'}`}
+                          >
+                            <Grid3x3 className="w-3 h-3 mr-2" />
+                            Minimap {showMinimap ? 'On' : 'Off'}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setWordWrap(!wordWrap)}
+                            className={`w-full justify-start text-xs h-8 ${wordWrap ? 'text-purple-400 bg-[#2a2a34]' : 'text-gray-400 hover:text-gray-200 hover:bg-[#2a2a34]'}`}
+                          >
+                            <WrapText className="w-3 h-3 mr-2" />
+                            Word Wrap {wordWrap ? 'On' : 'Off'}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setLineNumbers(!lineNumbers)}
+                            className={`w-full justify-start text-xs h-8 ${lineNumbers ? 'text-purple-400 bg-[#2a2a34]' : 'text-gray-400 hover:text-gray-200 hover:bg-[#2a2a34]'}`}
+                          >
+                            <FileText className="w-3 h-3 mr-2" />
+                            Line Numbers {lineNumbers ? 'On' : 'Off'}
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Right Column */}
+                    <div className="space-y-4">
+                      {/* Font Size */}
+                      <div>
+                        <h4 className="text-xs text-gray-500 mb-3 font-medium">Font Size</h4>
+                        <div className="flex items-center space-x-2 px-3 py-2 bg-[#2a2a34] rounded-md">
+                          <Type className="w-3 h-3 text-gray-400" />
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setFontSize(Math.max(10, fontSize - 1))}
+                            className="h-6 w-6 p-0 text-xs text-gray-400 hover:text-gray-200 hover:bg-[#3a3a44]"
+                          >
+                            -
+                          </Button>
+                          <span className="text-xs text-gray-400 w-8 text-center font-mono">{fontSize}</span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setFontSize(Math.min(24, fontSize + 1))}
+                            className="h-6 w-6 p-0 text-xs text-gray-400 hover:text-gray-200 hover:bg-[#3a3a44]"
+                          >
+                            +
+                          </Button>
+                        </div>
+                      </div>
+
+                      {/* Theme Selection */}
+                      <div>
+                        <h4 className="text-xs text-gray-500 mb-3 font-medium">Theme</h4>
+                        <div className="relative">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="w-full justify-start text-xs text-gray-400 hover:text-gray-200 hover:bg-[#2a2a34] h-8"
+                          >
+                            <Palette className="w-3 h-3 mr-2" />
+                            {themeOptions.find(opt => opt.value === theme)?.label || 'Select Theme'}
+                            <ChevronDown className="w-3 h-3 ml-auto" />
+                          </Button>
+                          <div className="mt-1 max-h-48 overflow-y-auto bg-[#2a2a34] rounded-lg">
+                            {themeOptions.map((themeOption) => (
+                              <button
+                                key={themeOption.value}
+                                onClick={() => {
+                                  setTheme(themeOption.value);
+                                  setIsSettingsOpen(false);
+                                }}
+                                className={`w-full text-left px-3 py-2 text-xs hover:bg-[#3a3a44] transition-colors ${
+                                  theme === themeOption.value ? 'text-purple-400 bg-[#3a3a44]' : 'text-gray-400'
+                                }`}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center space-x-2">
+                                    <div 
+                                      className="w-4 h-4 rounded border border-gray-600" 
+                                      style={{ backgroundColor: themeOption.bg }}
+                                    ></div>
+                                    <span>{themeOption.label}</span>
+                                  </div>
+                                  {theme === themeOption.value && (
+                                    <CheckCircle2 className="w-3 h-3 text-purple-400" />
+                                  )}
+                                </div>
+                              </button>
+                            ))}
                           </div>
-                        </button>
-                      ))}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
