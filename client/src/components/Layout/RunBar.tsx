@@ -1,34 +1,34 @@
-import { Button } from '../ui/button'
+import { Button } from '../ui/button';
 import {
   Select,
   SelectItem,
   SelectTrigger,
   SelectValue,
   SelectContent
-} from "../../components/ui/select"
-import { Badge } from '../ui/badge'
-import { Play, Loader2, Settings } from 'lucide-react'
+} from "../../components/ui/select";
+import { Badge } from '../ui/badge';
+import { Play, Loader2, Settings, Activity, Zap } from 'lucide-react';
 
 interface RunBarProps {
+  activeLanguage: string;
   selectedLanguage: string;
   onLanguageChange: (value: string) => void;
   onCompile: () => void;
   isCompiling: boolean;
 }
 
-const RunBar = ({ selectedLanguage, onLanguageChange, onCompile, isCompiling }: RunBarProps) => {
+const RunBar = ({ activeLanguage, selectedLanguage, onLanguageChange, onCompile, isCompiling }: RunBarProps) => {
   const languages = [
-    { value: 'cpp', label: 'C++', color: 'bg-blue-500' },
-    { value: 'c', label: 'C', color: 'bg-green-500' },
-    { value: 'zmm', label: 'Z--', color: 'bg-purple-500' },
-    { value: 'java', label: 'Java', color: 'bg-orange-500' },
-    { value: 'python', label: 'Python', color: 'bg-yellow-500' },
-    { value: 'javascript', label: 'JavaScript', color: 'bg-yellow-400' },
-    { value: 'rust', label: 'Rust', color: 'bg-red-500' },
-    { value: 'go', label: 'Go', color: 'bg-cyan-500' }
+    { value: 'cpp', label: 'C++', color: 'bg-blue-500', icon: '🔷' },
+    { value: 'c', label: 'C', color: 'bg-green-500', icon: '🔗' },
+    { value: 'zmm', label: 'Z--', color: 'bg-purple-500', icon: '⚡' },
+    { value: 'java', label: 'Java', color: 'bg-orange-500', icon: '☕' },
+    { value: 'python', label: 'Python', color: 'bg-yellow-500', icon: '🐍' },
+    { value: 'javascript', label: 'JavaScript', color: 'bg-yellow-400', icon: '🟨' },
+    { value: 'rust', label: 'Rust', color: 'bg-red-500', icon: '🦀' },
+    { value: 'go', label: 'Go', color: 'bg-cyan-500', icon: '🔵' }
   ];
-
-  const currentLanguage = languages.find(lang => lang.value === selectedLanguage);
+  const currentLanguage = languages.find(lang => lang.value === activeLanguage);
 
   return (
     <div className="bg-[#0a0a0f] border-b border-[#1a1a24] px-6 py-4">
@@ -49,7 +49,7 @@ const RunBar = ({ selectedLanguage, onLanguageChange, onCompile, isCompiling }: 
                     className="text-gray-100 hover:bg-[#1a1a24] focus:bg-[#1a1a24] focus:text-gray-100"
                   >
                     <div className="flex items-center space-x-2">
-                      <div className={`w-2 h-2 rounded-full ${lang.color}`} />
+                      <span className="text-sm">{lang.icon}</span>
                       <span>{lang.label}</span>
                     </div>
                   </SelectItem>
@@ -57,28 +57,39 @@ const RunBar = ({ selectedLanguage, onLanguageChange, onCompile, isCompiling }: 
               </SelectContent>
             </Select>
           </div>
-          
           {currentLanguage && (
-            <Badge variant="outline" className="bg-purple-900/20 text-purple-400 border-purple-400/30">
-              <div className={`w-2 h-2 rounded-full ${currentLanguage.color} mr-2`} />
+            <Badge 
+              variant="outline" 
+              className="bg-purple-900/20 text-purple-400 border-purple-400/30 px-3 py-1 font-mono text-xs"
+            >
+              <span className="mr-1">{currentLanguage.icon}</span>
               {currentLanguage.label}
             </Badge>
           )}
         </div>
-        
+        <div className="hidden md:flex items-center space-x-4">
+          <div className="flex items-center space-x-2 px-3 py-1 bg-[#1a1a24] rounded-lg">
+            <Activity className="w-3 h-3 text-green-400" />
+            <span className="text-xs text-gray-400">Editor Ready</span>
+          </div>
+          <div className="flex items-center space-x-2 px-3 py-1 bg-[#1a1a24] rounded-lg">
+            <Zap className="w-3 h-3 text-cyan-400" />
+            <span className="text-xs text-gray-400">Auto-save: ON</span>
+          </div>
+        </div>
         <Button 
           onClick={onCompile}
           disabled={isCompiling}
-          className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium px-6 py-2 rounded-lg transition-all duration-200 shadow-lg hover:shadow-purple-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="cursor-pointer bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white border-none px-6 py-2 h-9 font-medium text-sm shadow-lg hover:shadow-green-500/20 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isCompiling ? (
             <>
-              <Loader2 className="animate-spin mr-2 h-4 w-4" />
-              Compiling...
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Running...
             </>
           ) : (
             <>
-              <Play className="mr-2 h-4 w-4" />
+              <Play className="w-4 h-4 mr-2" />
               Run Code
             </>
           )}
@@ -88,4 +99,4 @@ const RunBar = ({ selectedLanguage, onLanguageChange, onCompile, isCompiling }: 
   );
 };
 
-export default RunBar
+export default RunBar;
