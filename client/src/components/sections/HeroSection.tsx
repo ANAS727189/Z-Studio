@@ -5,19 +5,36 @@ import TrueFocus from "../custom-ui/TrueFocus";
 import { useNavigate } from "react-router-dom";
 import SplashCursor from "../custom-ui/SplashCursor";
 import { useState } from "react";
+import HackerScreen from "../custom-ui/HackerScreen";
 
 
 const HeroSection = () => {
   const navigate = useNavigate();
   const [cnt, setCnt] = useState(0);
+  const [hacked, setHacked] = useState(false);
+
+
   const demoFunction = () => {
-    setCnt(cnt + 1);
-    if(cnt&1) {
-      window.open('https://www.youtube.com', '_blank');
-    }else {
-      window.open('https://github.com/ANAS727189/Z-Studio', '_blank');
-    }
-  }
+  setCnt(prev => {
+    const newCount = prev + 1;
+    const isEven = newCount % 2 === 0;
+
+    const url = isEven
+      ? `${import.meta.env.VITE_REDIRECT_DEMO_VIDEO}`
+      : `${import.meta.env.VITE_REDIRECT_GITHUB_REPO_URI}`;
+
+    window.open(url, '_blank');
+    return newCount;
+  });
+};
+
+if(hacked) {
+  return (
+    <>
+    <HackerScreen onClose={() => setHacked(false)} />
+    </>
+  )
+}
   return (
     <div className="relative min-h-screen overflow-hidden">
       <SplashCursor />
@@ -89,7 +106,10 @@ const HeroSection = () => {
           className="mt-16 relative z-50"
         >
           <div className="text-center flex" style={{ fontFamily: 'Poppins, sans-serif' }}>
-            <Code2 className="h-10 w-10"/>
+            <Code2 
+            className="h-10 w-10"
+             onClick={() => setHacked(true)}
+            />
             <TrueFocus 
               sentence="No Auth Web IDE" 
               manualMode={false}
@@ -178,21 +198,20 @@ const HeroSection = () => {
             style={{ fontFamily: 'Poppins, sans-serif' }}
           >
             <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-pink-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            <span className="relative z-10 flex items-center gap-3 text-lg">
-              <div className="relative">
-                {`${cnt & 1 ? 
-                <Play className="w-5 h-5 group-hover:text-purple-400 transition-colors duration-300" /> 
-                : ""}`}
-                <motion.div
-                  initial={{ scale: 0 }}
-                  whileHover={{ scale: 1.5 }}
-                  className="absolute inset-0 bg-purple-400/20 rounded-full cursor-pointer"
-                />
-              </div>
-              {`${
-                cnt & 1 ? "⭐ this repo on Github" : "Watch a demo"
-              }`}
-            </span>
+           <span className="relative z-10 flex items-center gap-3 text-lg">
+            {cnt % 2 === 0 ? (
+              <>
+                <Play className="w-5 h-5 group-hover:text-purple-400 transition-colors duration-300" />
+                Watch a demo
+              </>
+            ) : (
+              <>
+                <span className="text-yellow-400">⭐</span>
+                this repo on GitHub
+              </>
+            )}
+          </span>
+
           </motion.button>
         </motion.div>
 

@@ -7,13 +7,14 @@ interface InputBoxProps {
   onChange: (value: string) => void;
 }
 
+
 const InputBox: React.FC<InputBoxProps> = ({ input, onChange }) => {
   return (
     <Card className="h-full bg-[#0a0a0f] border-[#1a1a24] shadow-2xl">
       <CardHeader className="bg-[#0f0f17] border-b border-[#1a1a24] pb-3">
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center mt-4 gap-x-2">
           <Terminal className="w-4 h-4 text-green-400" />
-          <h3 className="text-sm font-semibold text-gray-100">Input</h3>
+          <h3 className="text-sm font-semibold text-gray-100">Standard Input</h3>
         </div>
       </CardHeader>
       <CardContent className="p-0 h-full">

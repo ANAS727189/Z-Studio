@@ -115,7 +115,7 @@ const ShowCase = () => {
             }
           >
             <img
-              src="/judge0-compile.png"
+              src="/code-editor-screen.png"
               alt="Z Studio Interface"
               className="mx-auto rounded-2xl object-cover h-full w-full object-left-top"
               draggable={false}

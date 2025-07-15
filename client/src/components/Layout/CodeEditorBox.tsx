@@ -1,22 +1,21 @@
-import React, { useState, useCallback, useMemo, useEffect } from 'react'
-import Editor from "@monaco-editor/react"
-import { Card, CardContent, CardHeader } from "../ui/card"
-import { Badge } from "../ui/badge"
-import { Button } from "../ui/button"
+import React, { useState, useCallback, useMemo } from 'react';
+import Editor from "@monaco-editor/react";
+import { Card, CardContent, CardHeader } from "../ui/card";
+import { Badge } from "../ui/badge";
+import { Button } from "../ui/button";
 import { 
   AlertCircle, 
   Code2, 
   Loader2, 
   Maximize2, 
   Minimize2,
-  Copy,
-  RotateCcw,
   FileText,
-  Palette,
-  Type,
-  Grid3x3,
-  WrapText,
-} from "lucide-react"
+  FolderOpen,
+  Zap,
+  Activity,
+  CheckCircle2,
+  X
+} from "lucide-react";
 import {
   draculaTheme,
   githubDarkTheme,
@@ -25,29 +24,41 @@ import {
   solarizedLightTheme,
   monokaiTheme,
   nightOwlTheme
-} from '../../themes/page'
+} from '../../themes/page';
+
 interface CodeEditorBoxProps {
-  language: string;
-  code: string;
+  activeLanguage: string;
+  files: { [fileName: string]: { code: string; language: string } };
+  activeFile: string;
+  setActiveFile: (file: string) => void;
   onChange: (value: string | undefined) => void;
-  theme?: string;
+  theme: string;
+  fontSize: number;
+  showMinimap: boolean;
+  wordWrap: boolean;
+  lineNumbers: boolean;
+  onAddFile: () => void;
 }
 
 const CodeEditorBox: React.FC<CodeEditorBoxProps> = ({ 
-  language, 
-  code, 
+  activeLanguage, 
+  files, 
+  activeFile, 
+  setActiveFile, 
   onChange, 
-  theme = 'dracula' 
+  theme,
+  fontSize,
+  showMinimap,
+  wordWrap,
+  lineNumbers,
+  onAddFile
 }) => {
   const [editorError, setEditorError] = useState<string | null>(null);
   const [isEditorReady, setIsEditorReady] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [fontSize, setFontSize] = useState(14);
-  const [showMinimap, setShowMinimap] = useState(false);
-  const [wordWrap, setWordWrap] = useState(true);
-  const [lineNumbers, setLineNumbers] = useState(true);
-  const [currentTheme, setCurrentTheme] = useState(theme);
-  const [showSettings, setShowSettings] = useState(false);
+  const [showExplorer, setShowExplorer] = useState(false);
+  const [currentLine, setCurrentLine] = useState(1);
+  const [currentColumn, setCurrentColumn] = useState(1);
 
   const langMap = useMemo(() => ({
     'cpp': 'cpp',
@@ -58,17 +69,6 @@ const CodeEditorBox: React.FC<CodeEditorBoxProps> = ({
     'javascript': 'javascript',
     'rust': 'rust',
     'go': 'go'
-  }), []);
-
-  const defaultCodeMap = useMemo(() => ({
-    'cpp': '#include <iostream>\nusing namespace std;\n\nint main() {\n    cout << "Hello, World!" << endl;\n    return 0;\n}',
-    'c': '#include <stdio.h>\n\nint main() {\n    printf("Hello, World!\\n");\n    return 0;\n}',
-    'zmm': 'start\nfun main{\n  print("Hello, World!")\n}end\n',
-    'java': 'public class Main {\n    public static void main(String[] args) {\n        System.out.println("Hello, World!");\n    }\n}',
-    'python': 'print("Hello, World!")',
-    'javascript': 'console.log("Hello, World!");',
-    'rust': 'fn main() {\n    println!("Hello, World!");\n}',
-    'go': 'package main\n\nimport "fmt"\n\nfunc main() {\n    fmt.Println("Hello, World!")\n}'
   }), []);
 
   const languageLabels = useMemo(() => ({
@@ -82,81 +82,38 @@ const CodeEditorBox: React.FC<CodeEditorBoxProps> = ({
     'go': 'Go'
   }), []);
 
-  const themeOptions = useMemo(() => [
-  { value: 'dracula', label: 'Dracula', bg: '#282a36' },
-  { value: 'vs-dark', label: 'Dark', bg: '#1e1e1e' },
-  { value: 'vs-light', label: 'Light', bg: '#ffffff' },
-  { value: 'hc-black', label: 'High Contrast', bg: '#000000' },
-  { value: 'monokai', label: 'Monokai', bg: '#272822' },
-  { value: 'solarized-dark', label: 'Solarized Dark', bg: '#002b36' },
-  { value: 'solarized-light', label: 'Solarized Light', bg: '#fdf6e3' },
-  { value: 'github-dark', label: 'GitHub Dark', bg: '#0d1117' },
-  { value: 'github-light', label: 'GitHub Light', bg: '#ffffff' },
-   { value: 'night-owl', label: 'Night Owl', bg: '#011627' }
-], []);
-
-
   const getMonacoLanguage = useCallback((lang: string): string => {
     return langMap[lang as keyof typeof langMap] || 'javascript';
   }, [langMap]);
 
-  const getDefaultCode = useCallback((lang: string): string => {
-    return defaultCodeMap[lang as keyof typeof defaultCodeMap] || defaultCodeMap['javascript'];
-  }, [defaultCodeMap]);
-
-
-  useEffect(() => {
-    if (!code) {
-      const defaultCode = getDefaultCode(language);
-      onChange(defaultCode);
-    }
-  }, [language, code, onChange, getDefaultCode]);
-
-const handleEditorDidMount = useCallback((editor, monaco): void => {
-  try {
-    monaco.editor.defineTheme('dracula', draculaTheme);
-    monaco.editor.defineTheme('github-dark', githubDarkTheme);
-    monaco.editor.defineTheme('github-light', githubLightTheme);
-    monaco.editor.defineTheme('solarized-dark', solarizedDarkTheme);
-    monaco.editor.defineTheme('solarized-light', solarizedLightTheme);
-    monaco.editor.defineTheme('monokai', monokaiTheme);
-    monaco.editor.defineTheme('night-owl', nightOwlTheme);
-    monaco.editor.setTheme(currentTheme);
-
-    setIsEditorReady(true);
-    setEditorError(null);
-
-    // 3) save‐shortcut hook
-    editor.addCommand(
-      monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS,
-      () => console.log('Save shortcut pressed')
-    );
-  } catch (error) {
-    console.error('Monaco Editor error:', error);
-    setEditorError('Editor failed to initialize');
-  }
-}, [currentTheme]);
-
-  const handleEditorChange = useCallback((value: string | undefined): void => {
+  const handleEditorDidMount = useCallback((editor, monaco): void => {
     try {
-      onChange(value);
+      monaco.editor.defineTheme('dracula', draculaTheme);
+      monaco.editor.defineTheme('github-dark', githubDarkTheme);
+      monaco.editor.defineTheme('github-light', githubLightTheme);
+      monaco.editor.defineTheme('solarized-dark', solarizedDarkTheme);
+      monaco.editor.defineTheme('solarized-light', solarizedLightTheme);
+      monaco.editor.defineTheme('monokai', monokaiTheme);
+      monaco.editor.defineTheme('night-owl', nightOwlTheme);
+      monaco.editor.setTheme(theme);
+
+      setIsEditorReady(true);
+      setEditorError(null);
+
+      editor.onDidChangeCursorPosition((e: { position: { lineNumber: number; column: number } }) => {
+        setCurrentLine(e.position.lineNumber);
+        setCurrentColumn(e.position.column);
+      });
+
+      editor.addCommand(
+        monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS,
+        () => console.log('Save shortcut pressed')
+      );
     } catch (error) {
-      console.error('Editor change error:', error);
+      console.error('Monaco Editor error:', error);
+      setEditorError('Editor failed to initialize');
     }
-  }, [onChange]);
-
-  const handleCopyCode = useCallback(() => {
-    navigator.clipboard.writeText(code || '');
-  }, [code]);
-
-  const handleResetCode = useCallback(() => {
-    const defaultCode = getDefaultCode(language);
-    onChange(defaultCode);
-  }, [language, onChange, getDefaultCode]);
-
-  const handleThemeChange = useCallback((newTheme: string) => {
-    setCurrentTheme(newTheme);
-  }, []);
+  }, [theme]);
 
   const editorOptions = useMemo(() => ({
     fontSize: fontSize,
@@ -172,8 +129,10 @@ const handleEditorDidMount = useCallback((editor, monaco): void => {
       vertical: 'auto' as const,
       horizontal: 'auto' as const,
       useShadows: false,
-      verticalScrollbarSize: 8,
-      horizontalScrollbarSize: 8
+      verticalScrollbarSize: 12,
+      horizontalScrollbarSize: 12,
+      verticalSliderSize: 12,
+      horizontalSliderSize: 12
     },
     quickSuggestions: true,
     parameterHints: { enabled: true },
@@ -181,8 +140,8 @@ const handleEditorDidMount = useCallback((editor, monaco): void => {
     acceptSuggestionOnEnter: 'on' as const,
     tabCompletion: 'on' as const,
     wordBasedSuggestions: 'currentDocument' as const,
-    theme: currentTheme,
-    padding: { top: 16, bottom: 16 },
+    theme: theme,
+    padding: { top: 20, bottom: 20, left: 16, right: 16 },
     cursorBlinking: 'smooth' as const,
     cursorSmoothCaretAnimation: 'on' as const,
     smoothScrolling: true,
@@ -191,13 +150,38 @@ const handleEditorDidMount = useCallback((editor, monaco): void => {
     bracketPairColorization: { enabled: true },
     guides: {
       bracketPairs: true,
-      indentation: true
+      indentation: true,
+      highlightActiveIndentation: true
     },
     renderWhitespace: 'selection' as const,
     renderControlCharacters: true,
     fontLigatures: true,
-    fontFamily: 'JetBrains Mono, Fira Code, Consolas, "Courier New", monospace'
-  }), [fontSize, showMinimap, wordWrap, lineNumbers, currentTheme]);
+    fontFamily: 'JetBrains Mono, Fira Code, SF Mono, Monaco, Inconsolata, "Roboto Mono", source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace',
+    matchBrackets: 'always' as const,
+    autoClosingBrackets: 'always' as const,
+    autoClosingQuotes: 'always' as const,
+    autoSurround: 'languageDefined' as const,
+    codeLens: true,
+    colorDecorators: true,
+    dragAndDrop: true,
+    formatOnPaste: true,
+    formatOnType: true,
+    hover: { enabled: true },
+    links: true,
+    occurrencesHighlight: 'singleFile' as const,
+    peekWidgetDefaultFocus: 'tree' as const,
+    quickSuggestionsDelay: 10,
+    renderLineHighlight: 'all' as const,
+    rulers: [],
+    selectionHighlight: true,
+    showFoldingControls: 'always' as const,
+    showUnused: true,
+    snippetSuggestions: 'top' as const,
+    tabSize: 2,
+    insertSpaces: true,
+    detectIndentation: true,
+    useTabStops: true,
+  }), [fontSize, showMinimap, wordWrap, lineNumbers, theme]);
 
   if (editorError) {
     return (
@@ -206,10 +190,10 @@ const handleEditorDidMount = useCallback((editor, monaco): void => {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <Code2 className="w-4 h-4 text-purple-400" />
-              <h3 className="text-sm font-semibold text-gray-100">Code Editor</h3>
+              <h3 className="text-sm font-semibold text-gray-100">Z Studio Editor</h3>
             </div>
             <Badge variant="outline" className="bg-red-900/20 text-red-400 border-red-400/30">
-              {languageLabels[language as keyof typeof languageLabels] || language.toUpperCase()}
+              {languageLabels[activeLanguage as keyof typeof languageLabels] || activeLanguage.toUpperCase()}
             </Badge>
           </div>
         </CardHeader>
@@ -223,196 +207,159 @@ const handleEditorDidMount = useCallback((editor, monaco): void => {
       </Card>
     );
   }
+
   return (
     <Card className={`h-full bg-[#0a0a0f] border-[#1a1a24] shadow-2xl overflow-hidden transition-all duration-200 ${isFullscreen ? 'fixed inset-0 z-50' : ''}`}>
-      {/* Enhanced Header */}
-      <CardHeader className="bg-gradient-to-r from-[#0f0f17] to-[#1a1a24] border-b border-[#1a1a24] pb-2">
-        <div className="flex items-center justify-between">
+      <CardHeader className="bg-gradient-to-r from-[#0f0f17] to-[#1a1a24] border-b border-[#1a1a24] pb-0">
+        <div className="flex items-center justify-between py-2">
           <div className="flex items-center space-x-3">
             <div className="flex items-center space-x-2">
-              <Code2 className="w-4 h-4 text-purple-400" />
-              <h3 className="text-sm font-semibold text-gray-100">Code Editor</h3>
+              <Code2 className="w-5 h-5 text-purple-400" />
+              <h3 className="text-lg font-semibold text-gray-100 tracking-tight">Z Studio Editor</h3>
             </div>
             <div className="flex items-center space-x-1">
-              <div className="w-3 h-3 rounded-full bg-red-400"></div>
-              <div className="w-3 h-3 rounded-full bg-yellow-400"></div>
-              <div className="w-3 h-3 rounded-full bg-green-400"></div>
+              <div className="w-3 h-3 rounded-full bg-red-400 hover:bg-red-300 cursor-pointer transition-colors"></div>
+              <div className="w-3 h-3 rounded-full bg-yellow-400 hover:bg-yellow-300 cursor-pointer transition-colors"></div>
+              <div className="w-3 h-3 rounded-full bg-green-400 hover:bg-green-300 cursor-pointer transition-colors"></div>
             </div>
           </div>
-          
-          <div className="flex items-center space-x-2">
-            <Badge variant="outline" className="bg-purple-900/20 text-purple-400 border-purple-400/30 font-mono text-xs">
-              {languageLabels[language as keyof typeof languageLabels] || language.toUpperCase()}
+          <div className="flex items-center space-x-3">
+            <Badge variant="outline" className="bg-purple-900/20 text-purple-400 border-purple-400/30 font-mono text-sm px-3 py-1">
+              {languageLabels[activeLanguage as keyof typeof languageLabels] || activeLanguage.toUpperCase()}
             </Badge>
+            <div className="flex items-center space-x-1">
+              <Activity className="w-4 h-4 text-green-400" />
+              <span className="text-xs text-green-400">Ready</span>
+            </div>
             {!isEditorReady && (
               <Loader2 className="w-4 h-4 text-purple-400 animate-spin" />
             )}
           </div>
         </div>
-        
-        {/* Toolbar */}
-        <div className="flex items-center justify-between pt-2">
-          <div className="flex items-center space-x-1">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={handleCopyCode}
-              className="h-7 px-2 text-xs text-gray-400 hover:text-gray-200 hover:bg-[#1a1a24]"
+        <div className="flex items-center justify-between border-b border-[#1a1a24] pb-0">
+          <div className="flex items-center overflow-x-auto">
+            {Object.keys(files).map(file => (
+              <div
+                key={file}
+                className={`flex items-center px-4 py-2 rounded-t-lg cursor-pointer ${activeFile === file ? 'bg-[#1a1a24] border-b-2 border-purple-500' : 'bg-[#0f0f17] hover:bg-[#141421]'}`}
+                onClick={() => setActiveFile(file)}
+              >
+                <FileText className=" Gw-4 h-4 text-gray-400 mr-2" />
+                <span className="text-sm text-gray-200">{file}</span>
+                {activeFile === file && <div className="w-2 h-2 bg-purple-400 rounded-full ml-2"></div>}
+              </div>
+            ))}
+            <div
+              className="flex items-center px-4 py-2 text-gray-500 hover:text-gray-300 cursor-pointer transition-colors"
+              onClick={onAddFile}
             >
-              <Copy className="w-3 h-3 mr-1" />
-              Copy
-            </Button>
-            
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={handleResetCode}
-              className="h-7 px-2 text-xs text-gray-400 hover:text-gray-200 hover:bg-[#1a1a24]"
-            >
-              <RotateCcw className="w-3 h-3 mr-1" />
-              Reset
-            </Button>
-            
-            <div className="w-px h-4 bg-[#1a1a24]"></div>
-            
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => setShowMinimap(!showMinimap)}
-              className={`h-7 px-2 text-xs hover:bg-[#1a1a24] ${showMinimap ? 'text-purple-400' : 'text-gray-400 hover:text-gray-200'}`}
-            >
-              <Grid3x3 className="w-3 h-3 mr-1" />
-              Map
-            </Button>
-            
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => setWordWrap(!wordWrap)}
-              className={`h-7 px-2 text-xs hover:bg-[#1a1a24] ${wordWrap ? 'text-purple-400' : 'text-gray-400 hover:text-gray-200'}`}
-            >
-              <WrapText className="w-3 h-3 mr-1" />
-              Wrap
-            </Button>
-            
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => setLineNumbers(!lineNumbers)}
-              className={`h-7 px-2 text-xs hover:bg-[#1a1a24] ${lineNumbers ? 'text-purple-400' : 'text-gray-400 hover:text-gray-200'}`}
-            >
-              <FileText className="w-3 h-3 mr-1" />
-              Lines
-            </Button>
+              <span className="text-sm">+</span>
+            </div>
           </div>
-          
           <div className="flex items-center space-x-1">
-            {/* Font Size Controls */}
-            <div className="flex items-center space-x-1 px-2 py-1 bg-[#1a1a24] rounded">
-              <Type className="w-3 h-3 text-gray-400" />
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => setFontSize(Math.max(10, fontSize - 1))}
-                className="h-5 w-5 p-0 text-xs text-gray-400 hover:text-gray-200"
-              >
-                -
-              </Button>
-              <span className="text-xs text-gray-400 w-6 text-center">{fontSize}</span>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => setFontSize(Math.min(24, fontSize + 1))}
-                className="h-5 w-5 p-0 text-xs text-gray-400 hover:text-gray-200"
-              >
-                +
-              </Button>
-            </div>
-            
-            {/* Theme Selector */}
-            <div className="relative">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => setShowSettings(!showSettings)}
-                className="h-7 px-2 text-xs text-gray-400 hover:text-gray-200 hover:bg-[#1a1a24]"
-              >
-                <Palette className="w-3 h-3 mr-1" />
-                Theme
-              </Button>
-              
-              {showSettings && (
-                <div className="absolute right-0 top-8 bg-[#1a1a24] border border-[#2a2a34] rounded-md shadow-lg z-10 min-w-[120px]">
-                  {themeOptions.map((themeOption) => (
-                    <button
-                      key={themeOption.value}
-                      onClick={() => {
-                        handleThemeChange(themeOption.value);
-                        setShowSettings(false);
-                      }}
-                      className={`w-full text-left px-3 py-2 text-xs hover:bg-[#2a2a34] ${
-                        currentTheme === themeOption.value ? 'text-purple-400' : 'text-gray-400'
-                      }`}
-                    >
-                      <div className="flex items-center space-x-2">
-                        <div 
-                          className="w-3 h-3 rounded border border-gray-600" 
-                          style={{ backgroundColor: themeOption.bg }}
-                        ></div>
-                        <span>{themeOption.label}</span>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-            
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => setShowExplorer(!showExplorer)}
+              className={`h-8 px-3 text-xs cursor-pointer hover:bg-[#1a1a24] transition-colors ${showExplorer ? 'text-purple-400 bg-[#1a1a24]' : 'text-gray-400 hover:text-gray-200'}`}
+            >
+              <FolderOpen className="w-3 h-3 mr-1" />
+              Explorer
+            </Button>
             <Button 
               variant="ghost" 
               size="sm" 
               onClick={() => setIsFullscreen(!isFullscreen)}
-              className="h-7 px-2 text-xs text-gray-400 hover:text-gray-200 hover:bg-[#1a1a24]"
+              className="h-8 px-3 text-xs text-gray-400 cursor-pointer hover:text-gray-200 hover:bg-[#1a1a24] transition-colors"
             >
               {isFullscreen ? <Minimize2 className="w-3 h-3" /> : <Maximize2 className="w-3 h-3" />}
             </Button>
           </div>
         </div>
       </CardHeader>
-      
       <CardContent className="p-0 h-full relative">
-        {/* Status Bar */}
-        <div className="absolute bottom-0 left-0 right-0 bg-[#0f0f17] border-t border-[#1a1a24] px-3 py-1 z-10">
-          <div className="flex items-center justify-between text-xs text-gray-400">
-            <div className="flex items-center space-x-4">
-              <span>Ln 1, Col 1</span>
-              <span>UTF-8</span>
-              <span>{getMonacoLanguage(language).toUpperCase()}</span>
+        <div className="flex h-full">
+          {showExplorer && (
+            <div className="w-64 bg-[#0f0f17] border-r border-[#1a1a24] p-4">
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="text-sm font-medium text-gray-200">Explorer</h4>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setShowExplorer(false)}
+                  className="h-6 w-6 p-0 text-gray-400 hover:text-gray-200"
+                >
+                  <X className="w-3 h-3" />
+                </Button>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2 p-2 rounded hover:bg-[#1a1a24] cursor-pointer">
+                  <FolderOpen className="w-4 h-4 text-blue-400" />
+                  <span className="text-sm text-gray-300">src</span>
+                </div>
+                {Object.keys(files).map(file => (
+                  <div
+                    key={file}
+                    className={`flex items-center space-x-2 p-2 pl-6 rounded ${activeFile === file ? 'bg-[#1a1a24] border-l-2 border-purple-500' : 'hover:bg-[#1a1a24]'} cursor-pointer`}
+                    onClick={() => setActiveFile(file)}
+                  >
+                    <FileText className="w-4 h-4 text-purple-400" />
+                    <span className="text-sm text-gray-200">{file}</span>
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="flex items-center space-x-4">
-              <span>Spaces: 2</span>
-              <span className="text-green-400">●</span>
+          )}
+          <div className="flex-1 flex flex-col">
+            <div className="flex-1">
+              <Editor
+                height="100%"
+                language={getMonacoLanguage(activeLanguage)}
+                theme={theme}
+                value={files[activeFile]?.code}
+                onChange={onChange}
+                onMount={handleEditorDidMount}
+                loading={
+                  <div className="flex items-center justify-center h-full bg-[#0a0a0f]">
+                    <div className="text-center">
+                      <Loader2 className="w-8 h-8 text-purple-400 animate-spin mx-auto mb-4" />
+                      <p className="text-gray-400 text-sm">Loading Z Studio Editor...</p>
+                      <div className="flex items-center justify-center space-x-2 mt-2">
+                        <Zap className="w-4 h-4 text-cyan-400" />
+                        <span className="text-xs text-gray-500">Powered by Z Studio</span>
+                      </div>
+                    </div>
+                  </div>
+                }
+                options={editorOptions}
+              />
             </div>
           </div>
         </div>
-        
-        <div className="h-full pb-6">
-          <Editor
-            height="100%"
-            language={getMonacoLanguage(language)}
-            theme={currentTheme}
-            value={code || getDefaultCode(language)}
-            onChange={handleEditorChange}
-            onMount={handleEditorDidMount}
-            loading={
-              <div className="flex items-center justify-center h-full bg-[#0a0a0f]">
-                <div className="text-center">
-                  <Loader2 className="w-8 h-8 text-purple-400 animate-spin mx-auto mb-2" />
-                  <p className="text-gray-400 text-sm">Loading editor...</p>
-                </div>
+        <div className="absolute bottom-0 left-0 right-0 bg-[#0f0f17] border-t border-[#1a1a24] px-4 py-2 z-10">
+          <div className="flex items-center justify-between text-xs">
+            <div className="flex items-center space-x-6">
+              <div className="flex items-center space-x-2">
+                <CheckCircle2 className="w-3 h-3 text-green-400" />
+                <span className="text-gray-400">Ready</span>
               </div>
-            }
-            options={editorOptions}
-          />
+              <div className="flex items-center space-x-4">
+                <span className="text-gray-400">Ln {currentLine}, Col {currentColumn}</span>
+                <span className="text-gray-400">UTF-8</span>
+                <span className="text-purple-400 font-medium">{getMonacoLanguage(activeLanguage).toUpperCase()}</span>
+              </div>
+            </div>
+            <div className="flex items-center space-x-6">
+              <div className="flex items-center space-x-4">
+                <span className="text-gray-400">Spaces: 2</span>
+                <span className="text-gray-400">Tab Size: 2</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                <span className="text-green-400">Z Studio</span>
+              </div>
+            </div>
+          </div>
         </div>
       </CardContent>
     </Card>
