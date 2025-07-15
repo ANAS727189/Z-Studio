@@ -5,10 +5,12 @@ import { Monitor, Loader2, AlertCircle, CheckCircle } from "lucide-react"
 interface OutputBoxProps {
   output?: string;
   isLoading: boolean;
+  compileTime?: number;
+  memoryUsage?: number;
   error?: string;
 }
 
-const OutputBox: React.FC<OutputBoxProps> = ({ output, isLoading, error }) => {
+const OutputBox: React.FC<OutputBoxProps> = ({ output, isLoading, error, compileTime, memoryUsage }) => {
   const getStatusIcon = () => {
     if (isLoading) return <Loader2 className="w-4 h-4 text-blue-400 animate-spin" />;
     if (error) return <AlertCircle className="w-4 h-4 text-red-400" />;
@@ -31,8 +33,8 @@ const OutputBox: React.FC<OutputBoxProps> = ({ output, isLoading, error }) => {
           <h3 className="text-sm font-semibold text-gray-100">{getStatusText()}</h3>
         </div>
       </CardHeader>
-      <CardContent className="p-4 h-full overflow-auto">
-        <div className="font-mono text-sm min-h-full" style={{ fontFamily: 'Fira Code, Monaco, Consolas, monospace' }}>
+      <CardContent className="p-4 h-full flex flex-col">
+        <div className="flex-1 font-mono text-sm whitespace-pre-wrap" style={{ fontFamily: 'Fira Code, Monaco, Consolas, monospace' }}>
           {isLoading ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-center">
@@ -41,9 +43,9 @@ const OutputBox: React.FC<OutputBoxProps> = ({ output, isLoading, error }) => {
               </div>
             </div>
           ) : error ? (
-            <div className="text-red-400 whitespace-pre-wrap">{error}</div>
+            <div className="text-red-400">{error}</div>
           ) : output ? (
-            <div className="text-green-400 whitespace-pre-wrap">{output}</div>
+            <div className="text-green-400">{output}</div>
           ) : (
             <div className="text-gray-500 flex items-center justify-center h-full">
               <div className="text-center">
@@ -53,9 +55,20 @@ const OutputBox: React.FC<OutputBoxProps> = ({ output, isLoading, error }) => {
             </div>
           )}
         </div>
+        {/* Compile stats */}
+        {!isLoading && (compileTime !== undefined || memoryUsage !== undefined) && (
+          <div className="mt-2 text-xs text-gray-400 flex justify-end space-x-4">
+            {compileTime !== undefined && (
+              <span>Time: {compileTime}s</span>
+            )}
+            {memoryUsage !== undefined && (
+              <span>Memory: {memoryUsage}KB</span>
+            )}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
 };
 
-export default OutputBox
+export default OutputBox;

@@ -17,8 +17,15 @@ import {
   Grid3x3,
   WrapText,
 } from "lucide-react"
-import draculaTheme from "../../themes/dracula.json";
-
+import {
+  draculaTheme,
+  githubDarkTheme,
+  githubLightTheme,
+  solarizedDarkTheme,
+  solarizedLightTheme,
+  monokaiTheme,
+  nightOwlTheme
+} from '../../themes/page'
 interface CodeEditorBoxProps {
   language: string;
   code: string;
@@ -85,9 +92,7 @@ const CodeEditorBox: React.FC<CodeEditorBoxProps> = ({
   { value: 'solarized-light', label: 'Solarized Light', bg: '#fdf6e3' },
   { value: 'github-dark', label: 'GitHub Dark', bg: '#0d1117' },
   { value: 'github-light', label: 'GitHub Light', bg: '#ffffff' },
-  { value: 'one-dark', label: 'One Dark', bg: '#282c34' },
-  { value: 'tokyo-night-dark', label: 'Tokyo Night Dark', bg: '#1a1b26' },
-  { value: 'tokyo-night-light', label: 'Tokyo Night Light', bg: '#d5d6db' },
+   { value: 'night-owl', label: 'Night Owl', bg: '#011627' }
 ], []);
 
 
@@ -107,21 +112,30 @@ const CodeEditorBox: React.FC<CodeEditorBoxProps> = ({
     }
   }, [language, code, onChange, getDefaultCode]);
 
-  const handleEditorDidMount = useCallback((editor, monaco): void => {
-    try {
-      monaco.editor.defineTheme('dracula', draculaTheme);
-      monaco.editor.setTheme(currentTheme); 
-      setIsEditorReady(true);
-      setEditorError(null);
-      
-      editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
-        console.log('Save shortcut pressed');
-      });
-    } catch (error) {
-      setEditorError('Editor failed to initialize');
-      console.error('Monaco Editor error:', error);
-    }
-  }, [currentTheme]);
+const handleEditorDidMount = useCallback((editor, monaco): void => {
+  try {
+    monaco.editor.defineTheme('dracula', draculaTheme);
+    monaco.editor.defineTheme('github-dark', githubDarkTheme);
+    monaco.editor.defineTheme('github-light', githubLightTheme);
+    monaco.editor.defineTheme('solarized-dark', solarizedDarkTheme);
+    monaco.editor.defineTheme('solarized-light', solarizedLightTheme);
+    monaco.editor.defineTheme('monokai', monokaiTheme);
+    monaco.editor.defineTheme('night-owl', nightOwlTheme);
+    monaco.editor.setTheme(currentTheme);
+
+    setIsEditorReady(true);
+    setEditorError(null);
+
+    // 3) save‐shortcut hook
+    editor.addCommand(
+      monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS,
+      () => console.log('Save shortcut pressed')
+    );
+  } catch (error) {
+    console.error('Monaco Editor error:', error);
+    setEditorError('Editor failed to initialize');
+  }
+}, [currentTheme]);
 
   const handleEditorChange = useCallback((value: string | undefined): void => {
     try {
@@ -209,7 +223,6 @@ const CodeEditorBox: React.FC<CodeEditorBoxProps> = ({
       </Card>
     );
   }
-
   return (
     <Card className={`h-full bg-[#0a0a0f] border-[#1a1a24] shadow-2xl overflow-hidden transition-all duration-200 ${isFullscreen ? 'fixed inset-0 z-50' : ''}`}>
       {/* Enhanced Header */}

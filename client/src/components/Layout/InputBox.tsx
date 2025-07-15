@@ -1,6 +1,6 @@
 import React from 'react'
 import { Card, CardContent, CardHeader } from "../ui/card"
-import { Terminal, FileText } from "lucide-react"
+import { Terminal} from "lucide-react"
 
 interface InputBoxProps {
   input: string;
