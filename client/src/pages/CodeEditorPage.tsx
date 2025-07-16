@@ -35,7 +35,7 @@ const CodeEditorPage = () => {
   const [input, setInput] = useState('');
   const [output, setOutput] = useState('');
   const [isCompiling, setIsCompiling] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState<string | { message: string; logs: string; suggestions: string }>('');
   const [compileTime, setCompileTime] = useState(0);
   const [memoryUsage, setMemoryUsage] = useState(0);
   const [theme, setTheme] = useState('dracula');
@@ -92,8 +92,24 @@ const CodeEditorPage = () => {
         setMemoryUsage(judge0Output.memory);
       }
     } catch (err) {
+      let errorResponse: { error: string; logs: string; suggestions: string };
+      if (typeof err === 'object' && err !== null && 'response' in err && typeof (err as any).response?.data === 'object') {
+        errorResponse = (err as any).response.data;
+      } else if (err instanceof Error) {
+        errorResponse = { error: err.message, logs: '', suggestions: '' };
+      } else {
+        errorResponse = { error: String(err), logs: '', suggestions: '' };
+      }
+    if (language === 'zmm') {
+      setError({
+        message: errorResponse.error || 'Compilation failed',
+        logs: errorResponse.logs || '',
+        suggestions: errorResponse.suggestions || '',
+      });
+    } else {
       const msg = err instanceof Error ? err.message : String(err);
       setError('Compilation failed: ' + msg);
+    }
     } finally {
       setIsCompiling(false);
     }
