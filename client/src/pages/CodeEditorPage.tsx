@@ -27,11 +27,11 @@ const fileExtensionMap: Record<LanguageKey, string> = {
 };
 
 const CodeEditorPage = () => {
-  const [selectedLanguage, setSelectedLanguage] = useState<LanguageKey>('cpp');
+  const [selectedLanguage, setSelectedLanguage] = useState<LanguageKey>('zmm');
   const [files, setFiles] = useState<{ [fileName: string]: { code: string; language: LanguageKey; isSaved: boolean } }>({
-    'main.cpp': { code: defaultCodeMap['cpp'], language: 'cpp', isSaved: true },
+    'main.z--': { code: defaultCodeMap['zmm'], language: 'zmm', isSaved: true },
   });
-  const [activeFile, setActiveFile] = useState('main.cpp');
+  const [activeFile, setActiveFile] = useState('main.z--');
   const [input, setInput] = useState('');
   const [output, setOutput] = useState('');
   const [isCompiling, setIsCompiling] = useState(false);
@@ -204,7 +204,7 @@ const CodeEditorPage = () => {
     <div className="flex-1 p-3 sm:p-6 grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-6 min-h-0">
       <div className="col-span-1 lg:col-span-2 flex flex-col min-h-0">
         <CodeEditorBox
-          activeLanguage={files[activeFile]?.language || 'cpp'}
+          activeLanguage={files[activeFile]?.language || 'zmm'}
           files={files}
           activeFile={activeFile}
           setActiveFile={setActiveFile}
@@ -260,7 +260,7 @@ const CodeEditorPage = () => {
         setLineNumbers={setLineNumbers}
       />
       <RunBar
-        activeLanguage={files[activeFile]?.language || 'cpp'}
+        activeLanguage={files[activeFile]?.language || 'zmm'}
         selectedLanguage={selectedLanguage}
         onLanguageChange={(value) => handleChangeActiveFileLanguage(value as LanguageKey)}
         onCompile={handleCompile}
