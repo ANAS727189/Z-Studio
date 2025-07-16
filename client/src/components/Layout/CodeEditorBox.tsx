@@ -1,8 +1,10 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import Editor from "@monaco-editor/react";
+import type {OnMount} from "@monaco-editor/react";
 import { Card, CardContent, CardHeader } from "../ui/card";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
+import type { editor as MonacoEditor } from 'monaco-editor';
 import { 
   AlertCircle, 
   Code2, 
@@ -54,8 +56,7 @@ const CodeEditorBox: React.FC<CodeEditorBoxProps> = ({
   wordWrap,
   lineNumbers,
   onAddFile,
-  onSave,
-  isAutoSave
+  onSave
 }) => {
   const [editorError, setEditorError] = useState<string | null>(null);
   const [isEditorReady, setIsEditorReady] = useState(false);
@@ -90,46 +91,49 @@ const CodeEditorBox: React.FC<CodeEditorBoxProps> = ({
     return langMap[lang as keyof typeof langMap] || 'javascript';
   }, [langMap]);
 
-  const handleEditorDidMount = useCallback((editor, monaco): void => {
-    try {
-      monaco.languages.register({ id: 'z--' });
-      monaco.languages.setMonarchTokensProvider('z--', {
-        tokenizer: {
-          root: [
-            [/(start|end|let)/, 'keyword'],
-          ],
-        },
-      });
+  const handleEditorDidMount: OnMount = useCallback(
+    (editor, monaco): void => {
+      try {
+        monaco.languages.register({ id: 'z--' });
+        monaco.languages.setMonarchTokensProvider('z--', {
+          tokenizer: {
+            root: [
+              [/(start|end|let)/, 'keyword'],
+            ],
+          },
+        });
 
-      monaco.editor.defineTheme('dracula', draculaTheme);
-      monaco.editor.defineTheme('github-dark', githubDarkTheme);
-      monaco.editor.defineTheme('github-light', githubLightTheme);
-      monaco.editor.defineTheme('solarized-dark', solarizedDarkTheme);
-      monaco.editor.defineTheme('solarized-light', solarizedLightTheme);
-      monaco.editor.defineTheme('monokai', monokaiTheme);
-      monaco.editor.defineTheme('night-owl', nightOwlTheme);
-      monaco.editor.setTheme(theme);
+        monaco.editor.defineTheme('dracula', draculaTheme as MonacoEditor.IStandaloneThemeData);
+        monaco.editor.defineTheme('github-dark', githubDarkTheme as MonacoEditor.IStandaloneThemeData);
+        monaco.editor.defineTheme('github-light', githubLightTheme as MonacoEditor.IStandaloneThemeData);
+        monaco.editor.defineTheme('solarized-dark', solarizedDarkTheme as MonacoEditor.IStandaloneThemeData);
+        monaco.editor.defineTheme('solarized-light', solarizedLightTheme as MonacoEditor.IStandaloneThemeData);
+        monaco.editor.defineTheme('monokai', monokaiTheme as MonacoEditor.IStandaloneThemeData);
+        monaco.editor.defineTheme('night-owl', nightOwlTheme as MonacoEditor.IStandaloneThemeData);
+        monaco.editor.setTheme(theme);
 
-      setIsEditorReady(true);
-      setEditorError(null);
+        setIsEditorReady(true);
+        setEditorError(null);
 
-      editor.onDidChangeCursorPosition((e: { position: { lineNumber: number; column: number } }) => {
-        setCurrentLine(e.position.lineNumber);
-        setCurrentColumn(e.position.column);
-      });
+        editor.onDidChangeCursorPosition((e) => {
+          setCurrentLine(e.position.lineNumber);
+          setCurrentColumn(e.position.column);
+        });
 
-      editor.addCommand(
-        monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS,
-        () => {
-          console.log('Save shortcut pressed');
-          onSave();
-        }
-      );
-    } catch (error) {
-      console.error('Monaco Editor error:', error);
-      setEditorError('Editor failed to initialize');
-    }
-  }, [theme, onSave]);
+        editor.addCommand(
+          monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS,
+          () => {
+            console.log('Save shortcut pressed');
+            onSave();
+          }
+        );
+      } catch (error) {
+        console.error('Monaco Editor error:', error);
+        setEditorError('Editor failed to initialize');
+      }
+    },
+    [theme, onSave]
+  );
 
   const editorOptions = useMemo(() => ({
     fontSize: fontSize,
