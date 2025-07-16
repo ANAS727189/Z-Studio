@@ -29,10 +29,12 @@ app.use((req, res, next) => {
 // Error handler
 app.use((err, req, res, next) => {
   console.error(err.stack || err);
-    res.status(500).json({
-        success: false,
-        error: err.message || "Internal Server Error",
-    });
+      res.status(err.status || 500).json({
+      success: false,
+      error: err.message || 'Internal Server Error',
+      logs: err.logs || '',
+      suggestions: err.suggestions || '',
+  });
 });
 
 export {app};

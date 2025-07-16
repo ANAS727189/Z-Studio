@@ -24,7 +24,7 @@ export const runZLangCompiler = async (code) => {
     // Run Z-- compiler
     const compilerPromise = new Promise((resolve, reject) => {
       exec(`node ${compilerPath} ${filepath} ${outputBase}`, { cwd: "/tmp" }, (err, stdout, stderr) => {
-        if (err) return reject(stderr || err.message);
+        if (err) return reject({ message: stderr || err.message, logs: stderr || '' });
         resolve(stdout);
       });
     });
@@ -34,7 +34,7 @@ export const runZLangCompiler = async (code) => {
     // Run lli
     const lliPromise = new Promise((resolve, reject) => {
       exec(`lli ${outputLLPath}`, { cwd: "/tmp" }, (err, stdout, stderr) => {
-        if (err) return reject(stderr || err.message);
+        if (err)  return reject({ message: stderr || err.message, logs: stderr || '' });
         resolve(stdout);
       });
     });
@@ -43,7 +43,11 @@ export const runZLangCompiler = async (code) => {
 
     return { compilerOutput, programOutput };
   } catch (err) {
-    throw err;
+     throw {
+      message: err.message || 'Compilation failed',
+      logs: err.logs || err.message || '',
+      suggestions: err.logs ? 'Check syntax and ensure valid Z-- code structure.' : '',
+    };
   } finally {
     // Cleanup temporary files
     await Promise.all([

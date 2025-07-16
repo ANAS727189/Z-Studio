@@ -123,6 +123,11 @@ const Navbar = ({
               </div>
             </button>
           </div>
+          <div>
+            <span 
+            className='text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer'
+            onClick={() => navigate('/docs')}>Docs</span>
+          </div>
         </div>
         <div className="flex items-center space-x-2">
           <div className="hidden md:flex items-center space-x-2 px-3 py-1 bg-[#1a1a24] rounded-lg">
