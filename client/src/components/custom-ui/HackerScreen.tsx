@@ -22,17 +22,29 @@ const HackerScreen = ({ onClose }: { onClose: () => void }) => {
   const [index, setIndex] = useState(0);
 
   useEffect(() => {
+    const audio = new Audio("/sound-alarm.mp3");
+    audio.loop = true;
+    audio.play().catch((e) => {
+      console.warn("Autoplay blocked:", e);
+    });
+
     const interval = setInterval(() => {
       if (index < hackerLogs.length) {
         setLogs((prev) => [...prev, hackerLogs[index]]);
         setIndex((prev) => prev + 1);
       } else {
         clearInterval(interval);
-        setTimeout(onClose, 8000);
+        setTimeout(() => {
+          audio.pause();
+          onClose();
+        }, 6000);
       }
     }, 800);
 
-    return () => clearInterval(interval);
+    return () => {
+      audio.pause();
+      clearInterval(interval);
+    };
   }, [index, onClose]);
 
   return (
