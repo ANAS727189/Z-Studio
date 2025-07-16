@@ -15,9 +15,11 @@ interface RunBarProps {
   onLanguageChange: (value: string) => void;
   onCompile: () => void;
   isCompiling: boolean;
+  isAutoSave: boolean;
+  onToggleAutoSave: () => void;
 }
 
-const RunBar = ({ activeLanguage, selectedLanguage, onLanguageChange, onCompile, isCompiling }: RunBarProps) => {
+const RunBar = ({ activeLanguage, selectedLanguage, onLanguageChange, onCompile, isCompiling, isAutoSave, onToggleAutoSave }: RunBarProps) => {
   const languages = [
     { value: 'cpp', label: 'C++', color: 'bg-blue-500', icon: '🔷' },
     { value: 'c', label: 'C', color: 'bg-green-500', icon: '🔗' },
@@ -75,9 +77,12 @@ const RunBar = ({ activeLanguage, selectedLanguage, onLanguageChange, onCompile,
               <Activity className="w-3 h-3 text-green-400" />
               <span className="text-xs text-gray-400">Editor Ready</span>
             </div>
-            <div className="flex items-center space-x-2 px-3 py-1 bg-[#1a1a24] rounded-lg">
+            <div 
+              className="flex items-center space-x-2 px-3 py-1 bg-[#1a1a24] rounded-lg cursor-pointer hover:bg-[#2a2a34] transition-colors"
+              onClick={onToggleAutoSave}
+            >
               <Zap className="w-3 h-3 text-cyan-400" />
-              <span className="text-xs text-gray-400">Auto-save: ON</span>
+              <span className="text-xs text-gray-400">Auto-save: {isAutoSave ? 'ON' : 'OFF'}</span>
             </div>
           </div>
           

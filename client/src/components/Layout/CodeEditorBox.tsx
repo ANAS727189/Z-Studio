@@ -28,7 +28,7 @@ import {
 
 interface CodeEditorBoxProps {
   activeLanguage: string;
-  files: { [fileName: string]: { code: string; language: string } };
+  files: { [fileName: string]: { code: string; language: string; isSaved: boolean } };
   activeFile: string;
   setActiveFile: (file: string) => void;
   onChange: (value: string | undefined) => void;
@@ -38,6 +38,8 @@ interface CodeEditorBoxProps {
   wordWrap: boolean;
   lineNumbers: boolean;
   onAddFile: () => void;
+  onSave: () => void;
+  isAutoSave: boolean;
 }
 
 const CodeEditorBox: React.FC<CodeEditorBoxProps> = ({ 
@@ -51,7 +53,9 @@ const CodeEditorBox: React.FC<CodeEditorBoxProps> = ({
   showMinimap,
   wordWrap,
   lineNumbers,
-  onAddFile
+  onAddFile,
+  onSave,
+  isAutoSave
 }) => {
   const [editorError, setEditorError] = useState<string | null>(null);
   const [isEditorReady, setIsEditorReady] = useState(false);
@@ -63,7 +67,7 @@ const CodeEditorBox: React.FC<CodeEditorBoxProps> = ({
   const langMap = useMemo(() => ({
     'cpp': 'cpp',
     'c': 'c',
-    'zmm': 'javascript',
+    'zmm': 'z--',
     'java': 'java',
     'python': 'python',
     'javascript': 'javascript',
@@ -88,6 +92,15 @@ const CodeEditorBox: React.FC<CodeEditorBoxProps> = ({
 
   const handleEditorDidMount = useCallback((editor, monaco): void => {
     try {
+      monaco.languages.register({ id: 'z--' });
+      monaco.languages.setMonarchTokensProvider('z--', {
+        tokenizer: {
+          root: [
+            [/(start|end|let)/, 'keyword'],
+          ],
+        },
+      });
+
       monaco.editor.defineTheme('dracula', draculaTheme);
       monaco.editor.defineTheme('github-dark', githubDarkTheme);
       monaco.editor.defineTheme('github-light', githubLightTheme);
@@ -107,13 +120,16 @@ const CodeEditorBox: React.FC<CodeEditorBoxProps> = ({
 
       editor.addCommand(
         monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS,
-        () => console.log('Save shortcut pressed')
+        () => {
+          console.log('Save shortcut pressed');
+          onSave();
+        }
       );
     } catch (error) {
       console.error('Monaco Editor error:', error);
       setEditorError('Editor failed to initialize');
     }
-  }, [theme]);
+  }, [theme, onSave]);
 
   const editorOptions = useMemo(() => ({
     fontSize: fontSize,
@@ -247,7 +263,7 @@ const CodeEditorBox: React.FC<CodeEditorBoxProps> = ({
               >
                 <FileText className="w-3 h-3 sm:w-4 sm:h-4 text-gray-400 mr-1 sm:mr-2" />
                 <span className="text-xs sm:text-sm text-gray-200">{file}</span>
-                {activeFile === file && <div className="w-2 h-2 bg-purple-400 rounded-full ml-1 sm:ml-2"></div>}
+                {activeFile === file && !files[file].isSaved && <div className="w-2 h-2 bg-purple-400 rounded-full ml-1 sm:ml-2"></div>}
               </div>
             ))}
             <div
