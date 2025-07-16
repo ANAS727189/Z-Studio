@@ -6,7 +6,6 @@ import {
   Globe, 
   Layers, 
   Cpu, 
-  ChevronRight,
   Sparkles,
   Terminal,
   Play,
