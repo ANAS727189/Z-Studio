@@ -1,23 +1,45 @@
+# Z Studio
 
-# Z-studio
-**Z-studio** is a complete development ecosystem for the Z-- programming language. Built by developers, for developers, it combines a simple syntax with a powerful compiler and a modern web-based editor — all in one unified project.
+[![Release Version](https://img.shields.io/badge/v-1.0.0-blue.svg)](https://github.com/yourusername/Z-studio/releases)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](./LICENSE)
 
-## ✨ Features
+**Z Studio** is a full‑stack development ecosystem for the **Z--** programming language—designed to deliver a seamless authoring, compilation, and execution experience. Whether you're writing language tutorials, building algorithms, or exploring new language features, Z Studio brings compiler theory and modern web‑IDE convenience together in one unified platform.
 
-- 🔤 **Custom Language (`Z--`)**  
-  A clean, expressive, and minimal syntax with features like `fun`, `let`, and custom control structures.
+---
 
-- 🧠 **Compiler (From Scratch)**  
-  Includes Lexer → Parser → AST → C Code Generator → LLVM IR Generator.
+## ✨ Key Features
 
-- 🧪 **Online Code Editor**  
-  A beautiful web-based code editor to write and run Z-- code directly in the browser.
+* 🔤 **Custom Language: Z--**
 
-- 🔌 **Server Backend**  
-  Connects the editor to the Z-- compiler and Judge0 API for multi-language support (C++, Python, Java, etc.).
+  * Minimal and expressive syntax with `start`/`end` blocks, `let` declarations, and first‑class functions (`fun`).
+  * Built‑in control structures (`if`/`else`, `while`, `for`, `break`).
+  * Static typing with type inference and support for integers, floats, booleans, and strings.
 
-- 🧾 **Multi-language Support via Judge0**  
-  Compile and test non-Z-- languages too, right from the same interface.
+* 🛠️ **From‑Scratch Compiler**
+
+  1. **Lexer** → 2. **Parser** → 3. **AST** → 4. **C Code Generator** → 5. **LLVM IR Generator**
+
+  * Implements key compiler stages by hand for learning and extensibility.
+  * Generates human‑readable C code for portability and LLVM IR for optimizations.
+  * Dead‑code elimination and basic AST optimizations.
+
+* 🌐 **Modern Web‑Based Editor**
+
+  * Real‑time syntax highlighting for Z-- and popular languages (C++, Java, Python, JavaScript, Go, Rust).
+  * Integrated console with stdin/stdout capture and error reporting.
+  * Auto‑save, multi‑file support, and keyboard shortcuts.
+
+* 🔌 **Server Backend**
+
+  * Express‑powered API routes:
+
+    * `/z-lang/compile` → compiles Z-- via the custom backend.
+    * `/judge0/compile` → proxies to Judge0 for multi‑language compilation (C++, Java, Python, etc.).
+  * Dead‑code filtering, request queuing, and secure sandboxing.
+
+* 🔄 **Multi‑Language Support** via Judge0
+
+  * Easily run, test, and share code in C, C++, Java, Python, JavaScript, Go, Rust, and more—right alongside Z-- programs.
 
 ---
 
@@ -25,56 +47,118 @@
 
 ```bash
 Z-studio/
-├── client/        # Web code editor (client)
-├── server/          # Backend server (routes Z-- and Judge0 calls)
-├── compiler(z--)/        # Z-- compiler: Lexer, Parser, AST, CodeGen
-├── docs/            # Language reference, examples, roadmap
-└── README.md
-````
+├── client/                 # React + Tailwind web IDE
+├── server/                 # Node.js + Express backend routes & controllers
+├── compiler/               # Z-- compiler modules (lexer, parser, AST, codegen)
+├── docs/                   # Documentation site (Next.js) with architecture diagrams
+├── LICENSE                 # Open‑source license
+└── README.md               # Project overview and setup guide
+```
 
 ---
 
 ## 🚀 Getting Started
 
-1. Clone the repo:
+### Prerequisites
 
-   ```bash
-   git clone https://github.com/yourusername/Z-studio.git
-   cd Z-studio
-   ```
+* Node.js (>= 16.x)
+* npm or pnpm
 
-2. Install dependencies for each part (compiler, frontend, server, etc.)
+### Clone and Install
 
-3. Run the full stack:
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/Z-studio.git
+cd Z-studio
 
-   * `npm run dev` (frontend)
-   * `node server.js` (server)
-   * `node src/index.js` (compiler backend)
+# Install dependencies
+pm install        # installs client & server deps
+cd client && npm install
+cd ../compiler && npm install
+```
 
----
+### Run in Development
 
-## 📖 Documentation
+```bash
+# Open three terminals or use a terminal multiplexer
+# 1) Start compiler backend
+cd compiler && npm run watch       # rebuilds on changes
 
-Check the [`docs/`](./docs) folder for language syntax, sample programs, and architecture details.
+# 2) Launch server API
+git checkout main && cd ../server && npm run dev
 
----
+# 3) Launch web IDE (client)
+cd ../client && npm run dev
+```
 
-## 🧠 Roadmap
-
-* [x] Lexer
-* [x] Parser → AST
-* [ ] C Code Generation
-* [ ] LLVM IR generation
-* [ ] Full IDE integration
-* [ ] CLI support
-
----
-
-## 👨‍💻 Author
-
-Built with love by **Anas Khan** 💻
-
-> "Z-- is the language I always wished I had when learning to code."
+Open your browser at [http://localhost:3000](http://localhost:3000) to start coding in Z--!
 
 ---
 
+## 📖 Usage Examples
+
+### Hello World (Z--):
+
+```z--
+start
+  fun main {
+    print("Hello, Z-- World!")
+    return 0
+  }
+end
+```
+
+### Average Calculator:
+
+```z--
+start
+  let a = 10
+  let b = 20
+  let avg = (a + b) / 2
+  print("Average is: ")
+  print(avg)
+end
+```
+
+### Fibonacci Generator:
+
+```z--
+start
+  let n
+  print("How many Fibonacci numbers?")
+  input(n)
+  let a = 0, b = 1
+  while n > 0 {
+    print(a)
+    let c = a + b
+    a = b
+    b = c
+    n = n - 1
+  }
+end
+```
+
+Contributions and feature requests are warmly welcome! See [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines.
+
+---
+
+## 👨‍💻 Contributing
+
+1. Fork the repository and create a new branch (`git checkout -b feature/my-feature`).
+2. Commit your changes with meaningful messages (`git commit -m "feat: add awesome feature"`).
+3. Push to your fork (`git push origin feature/my-feature`).
+4. Open a Pull Request describing your changes.
+
+Please ensure code style consistency and include tests where applicable.
+
+---
+
+
+
+## ✍️ Author
+
+Built with passion by **Anas Khan** 💻
+
+---
+
+© 2025 Z Studio Contributors. All rights reserved.
