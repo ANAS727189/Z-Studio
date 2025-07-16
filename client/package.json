@@ -16,7 +16,6 @@
     "@tailwindcss/vite": "^4.1.11",
     "@types/matter-js": "^0.19.8",
     "@types/three": "^0.178.1",
-    "@vercel/analytics": "^1.5.0",
     "axios": "^1.10.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
