@@ -7,7 +7,7 @@ type LanguageKey = 'cpp' | 'c' | 'zmm' | 'java' | 'python' | 'javascript' | 'rus
 const defaultCodeMap: Record<LanguageKey, string> = {
   'cpp': '#include <iostream>\nusing namespace std;\n\nint main() {\n    cout << "Hello, World!" << endl;\n    return 0;\n}',
   'c': '#include <stdio.h>\n\nint main() {\n    printf("Hello, World!\\n");\n    return 0;\n}',
-  'zmm': 'start\nfun main{\n  print("Hello, World!")\n}end\n',
+  'zmm': 'start\n print("Hello World!")\nend\n',
   'java': 'public class Main {\n    public static void main(String[] args) {\n        System.out.println("Hello, World!");\n    }\n}',
   'python': 'print("Hello, World!")',
   'javascript': 'console.log("Hello, World!");',
@@ -28,8 +28,8 @@ const fileExtensionMap: Record<LanguageKey, string> = {
 
 const CodeEditorPage = () => {
   const [selectedLanguage, setSelectedLanguage] = useState<LanguageKey>('cpp');
-  const [files, setFiles] = useState<{ [fileName: string]: { code: string; language: LanguageKey } }>({
-    'main.cpp': { code: defaultCodeMap['cpp'], language: 'cpp' },
+  const [files, setFiles] = useState<{ [fileName: string]: { code: string; language: LanguageKey; isSaved: boolean } }>({
+    'main.cpp': { code: defaultCodeMap['cpp'], language: 'cpp', isSaved: true },
   });
   const [activeFile, setActiveFile] = useState('main.cpp');
   const [input, setInput] = useState('');
@@ -43,6 +43,7 @@ const CodeEditorPage = () => {
   const [showMinimap, setShowMinimap] = useState(false);
   const [wordWrap, setWordWrap] = useState(true);
   const [lineNumbers, setLineNumbers] = useState(true);
+  const [isAutoSave, setIsAutoSave] = useState(true);
 
   const languageIdMap: Record<string, number> = {
     c: 104,
@@ -100,31 +101,29 @@ const CodeEditorPage = () => {
 
   const handleChangeActiveFileLanguage = useCallback((newLanguage: LanguageKey) => {
     setFiles(prevFiles => {
-      // const oldFile = prevFiles[activeFile];
       const newExtension = fileExtensionMap[newLanguage];
       const oldExtension = activeFile.split('.').pop();
       let newFileName = activeFile;
       if (oldExtension !== newExtension) {
         newFileName = activeFile.replace(/\.[^.]+$/, `.${newExtension}`);
         if (prevFiles[newFileName]) {
-          // If the new file name already exists, keep the old name
           newFileName = activeFile;
         } else {
-          // Remove the old file entry if renamed
           delete prevFiles[activeFile];
         }
       }
       const updatedFiles = {
         ...prevFiles,
         [newFileName]: {
-          code: defaultCodeMap[newLanguage], // Reset to default code
+          code: defaultCodeMap[newLanguage],
           language: newLanguage,
+          isSaved: true, // New files are considered saved
         },
       };
-      setActiveFile(newFileName); // Update active file to new name if renamed
+      setActiveFile(newFileName);
       return updatedFiles;
     });
-    setSelectedLanguage(newLanguage); // Sync selectedLanguage for new files
+    setSelectedLanguage(newLanguage);
     setOutput('');
     setError('');
   }, [activeFile]);
@@ -139,7 +138,7 @@ const CodeEditorPage = () => {
     }
     setFiles(prevFiles => ({
       ...prevFiles,
-      [newFileName]: { code: defaultCodeMap[selectedLanguage], language: selectedLanguage },
+      [newFileName]: { code: defaultCodeMap[selectedLanguage], language: selectedLanguage, isSaved: true },
     }));
     setActiveFile(newFileName);
   }, [selectedLanguage, files]);
@@ -154,9 +153,36 @@ const CodeEditorPage = () => {
       [activeFile]: {
         ...prevFiles[activeFile],
         code: defaultCodeMap[prevFiles[activeFile].language],
+        isSaved: true,
       },
     }));
   }, [activeFile]);
+
+  const handleSave = useCallback(() => {
+    setFiles(prevFiles => ({
+      ...prevFiles,
+      [activeFile]: {
+        ...prevFiles[activeFile],
+        isSaved: true,
+      },
+    }));
+  }, [activeFile]);
+
+  const toggleAutoSave = useCallback(() => {
+    setIsAutoSave(prev => {
+      if (!prev) {
+        // Turning auto-save ON, mark all files as saved
+        setFiles(prevFiles => {
+          const updatedFiles = { ...prevFiles };
+          Object.keys(updatedFiles).forEach(file => {
+            updatedFiles[file].isSaved = true;
+          });
+          return updatedFiles;
+        });
+      }
+      return !prev;
+    });
+  }, []);
 
   const editorLayout = useMemo(() => (
     <div className="flex-1 p-3 sm:p-6 grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-6 min-h-0">
@@ -168,7 +194,11 @@ const CodeEditorPage = () => {
           setActiveFile={setActiveFile}
           onChange={(value) => setFiles(prev => ({
             ...prev,
-            [activeFile]: { ...prev[activeFile], code: value ?? '' },
+            [activeFile]: {
+              ...prev[activeFile],
+              code: value ?? '',
+              isSaved: isAutoSave ? true : false, // Mark as unsaved if auto-save is OFF
+            },
           }))}
           theme={theme}
           fontSize={fontSize}
@@ -176,6 +206,8 @@ const CodeEditorPage = () => {
           wordWrap={wordWrap}
           lineNumbers={lineNumbers}
           onAddFile={handleAddFile}
+          onSave={handleSave}
+          isAutoSave={isAutoSave}
         />
       </div>
       <div className="col-span-1 flex flex-col lg:grid lg:grid-rows-2 gap-3 sm:gap-6 min-h-0">
@@ -193,7 +225,7 @@ const CodeEditorPage = () => {
         </div>
       </div>
     </div>
-  ), [files, activeFile, input, output, isCompiling, error, theme, fontSize, showMinimap, wordWrap, lineNumbers, handleAddFile]);
+  ), [files, activeFile, input, output, isCompiling, error, theme, fontSize, showMinimap, wordWrap, lineNumbers, handleAddFile, isAutoSave, handleSave]);
 
   return (
     <div className="h-screen flex flex-col bg-[#060111] overflow-hidden">
@@ -217,6 +249,8 @@ const CodeEditorPage = () => {
         onLanguageChange={(value) => handleChangeActiveFileLanguage(value as LanguageKey)}
         onCompile={handleCompile}
         isCompiling={isCompiling}
+        isAutoSave={isAutoSave}
+        onToggleAutoSave={toggleAutoSave}
       />
       {editorLayout}
     </div>

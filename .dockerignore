@@ -1,0 +1,7 @@
+node_modules
+dist
+.env
+.vscode
+*.log
+frontend/node_modules
+backend/node_modules
