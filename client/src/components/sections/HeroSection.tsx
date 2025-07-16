@@ -20,8 +20,8 @@ const HeroSection = () => {
     const isEven = newCount % 2 === 0;
 
     const url = isEven
-      ? `${import.meta.env.VITE_REDIRECT_DEMO_VIDEO}`
-      : `${import.meta.env.VITE_REDIRECT_GITHUB_REPO_URI}`;
+      ? `${import.meta.env.VITE_REDIRECT_GITHUB_REPO_URI}`
+      : `${import.meta.env.VITE_REDIRECT_DEMO_VIDEO}`;
 
     window.open(url, '_blank');
     return newCount;
