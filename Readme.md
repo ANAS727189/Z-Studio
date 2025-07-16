@@ -157,7 +157,7 @@ Please ensure code style consistency and include tests where applicable.
 
 ## ✍️ Author
 
-Built with passion by **Anas Khan** 💻
+Built with love & passion by **Anas** 💻
 
 ---
 
