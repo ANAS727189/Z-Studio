@@ -44,8 +44,9 @@ COPY Compiler/src ./src
 # Stage 2: Final runtime (with /bin/sh support)
 FROM node:18-slim
 
-# Optional: Clean up to keep final image small
-RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends llvm && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app/server
 COPY --from=builder /app/server/node_modules ./node_modules
@@ -57,3 +58,4 @@ COPY --from=builder /app/Compiler ./Compiler
 ENV COMPILER_PATH=/app/Compiler/src/index.js
 
 CMD ["node", "server/src/server.js"]
+
