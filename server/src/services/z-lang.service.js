@@ -15,7 +15,7 @@ export const runZLangCompiler = async (code) => {
   const outputBase = path.join("/tmp", `output-${uniqueId}`);
   const outputLLPath = `${outputBase}.ll`; // e.g., /tmp/output-uuid.ll
   const outputCPath = `${outputBase}.c`; // e.g., /tmp/output-uuid.c
-  const compilerPath = path.join(__dirname, `${process.env.COMPILER_PATH}`).replace(/([()])/g, "\\$1");
+  const compilerPath = path.join(__dirname, `${process.env.COMPILER_PATH}`);
 
   try {
     // Writes Z-- code to a temporary file
@@ -33,7 +33,7 @@ export const runZLangCompiler = async (code) => {
 
     // Run lli
     const lliPromise = new Promise((resolve, reject) => {
-      exec(`lli ${outputLLPath}`, { cwd: "/tmp" }, (err, stdout, stderr) => {
+      exec(`lli-14 ${outputLLPath}`, { cwd: "/tmp" }, (err, stdout, stderr) => {
         if (err)  return reject({ message: stderr || err.message, logs: stderr || '' });
         resolve(stdout);
       });
