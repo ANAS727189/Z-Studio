@@ -19,7 +19,7 @@ services:
       - "7000:7000"
     environment:
       - PORT=7000
-      - COMPILER_PATH=/app/Compiler(Z--)/src/index.js
+      - COMPILER_PATH=/app/Compiler/src/index.js
     volumes:
       - ./tmp:/tmp  # Uncomment if you need to persist temporary files
     networks:

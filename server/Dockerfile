@@ -21,21 +21,13 @@ COPY server/package.json server/package-lock.json ./
 RUN npm ci
 
 # Set working directory for compiler
-WORKDIR /app/Compiler(Z--)
-COPY Compiler(Z--)/package.json ./package.json
-COPY Compiler(Z--)/package-lock.json ./package-lock.json
-# Copy node-addon-api to ensure its headers are available
-COPY Compiler(Z--)/node_modules/node-addon-api ./node_modules/node-addon-api
+WORKDIR /app/Compiler
+COPY Compiler/package.json ./package.json
+COPY Compiler/package-lock.json ./package-lock.json
 RUN npm ci --ignore-scripts
 
 # Debug: Check for CMakeLists.txt
-RUN find /app/Compiler\(Z--\)/node_modules/llvm-bindings -name CMakeLists.txt || echo "CMakeLists.txt not found"
-
-# Debug: Check for node_api.h in system paths and cmake-js headers
-RUN find /root/.cmake-js -name node_api.h || echo "node_api.h not found in cmake-js headers"
-
-# Debug: Check for cmake-js binary
-RUN ls -l /app/Compiler\(Z--\)/node_modules/.bin/cmake-js || echo "cmake-js binary not found"
+RUN find /app/Compiler/node_modules/llvm-bindings -name CMakeLists.txt || echo "CMakeLists.txt not found"
 
 # Manually copy node_api.h to cmake-js header directory
 RUN mkdir -p /root/.cmake-js/node-x64/v18.20.8/include/node && \
@@ -44,10 +36,10 @@ RUN mkdir -p /root/.cmake-js/node-x64/v18.20.8/include/node && \
     echo "Failed to copy node_api.h"
 
 # Compile llvm-bindings using cmake-js
-RUN npm run compile-llvm
+RUN npm run compile-llvm --prefix .
 
 # Copy compiler source
-COPY Compiler(Z--)/src ./src
+COPY Compiler/src ./src
 
 # Stage 2: Final runtime (with compiler bundled)
 FROM gcr.io/distroless/nodejs18-debian11
@@ -59,9 +51,9 @@ COPY server/ .
 
 # Copy compiler files and node_modules
 WORKDIR /app
-COPY --from=builder /app/Compiler\(Z--\) ./Compiler(Z--)
+COPY --from=builder /app/Compiler ./Compiler
 
 # Set environment variable for compiler path
-ENV COMPILER_PATH=/app/Compiler(Z--)/src/index.js
+ENV COMPILER_PATH=/app/Compiler/src/index.js
 
 CMD ["src/server.js"]
