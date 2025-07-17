@@ -15,7 +15,7 @@ export const runZLangCompiler = async (code) => {
   const outputBase = path.join("/tmp", `output-${uniqueId}`);
   const outputLLPath = `${outputBase}.ll`; // e.g., /tmp/output-uuid.ll
   const outputCPath = `${outputBase}.c`; // e.g., /tmp/output-uuid.c
-  const compilerPath = path.join(__dirname, `${process.env.COMPILER_PATH}`);
+  const compilerPath = process.env.COMPILER_PATH;
 
   try {
     // Writes Z-- code to a temporary file
