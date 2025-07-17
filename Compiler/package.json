@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node src/index.js",
     "test": "vitest",
-    "test:ui": "vitest --ui"
+    "test:ui": "vitest --ui",
+     "compile-llvm": "cmake-js compile --directory node_modules/llvm-bindings"
   },
   "keywords": [],
   "author": "",
