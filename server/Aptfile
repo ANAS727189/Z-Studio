@@ -1,0 +1,8 @@
+llvm-14
+cmake
+build-essential
+libnode-dev
+libffi-dev
+libtinfo-dev
+zlib1g-dev
+libxml2-dev
