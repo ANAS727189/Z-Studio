@@ -56,4 +56,4 @@ COPY --from=builder /app/Compiler ./Compiler
 # Set environment variable for compiler path
 ENV COMPILER_PATH=/app/Compiler/src/index.js
 
-CMD ["src/server.js"]
+CMD ["server/src/server.js"]
