@@ -1,7 +1,7 @@
 # Stage 1: Build dependencies and compiler
 FROM node:18 AS builder
 
-# Install build tools, LLVM, and Node.js development headers
+# Installing build tools, LLVM, and Node.js development headers
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
       llvm-dev \
@@ -12,7 +12,7 @@ RUN apt-get update \
       libnode-dev \
  && rm -rf /var/lib/apt/lists/*
 
-# Debug: Check for node_api.h in system paths
+# Debug: Checking for node_api.h in system paths
 RUN find / -name node_api.h || echo "node_api.h not found"
 
 # Set working directory for server
@@ -41,7 +41,7 @@ RUN npm run compile-llvm --prefix .
 # Copy compiler source
 COPY Compiler/src ./src
 
-# Stage 2: Final runtime (with /bin/sh support)
+# Stage 2: Final runtime 
 FROM node:18-slim
 
 RUN apt-get update && \

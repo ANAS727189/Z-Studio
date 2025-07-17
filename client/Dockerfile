@@ -5,7 +5,7 @@ WORKDIR /app
 COPY client/ ./
 RUN npm ci && npm run build
 
-# Stage 2: Serve using distroless NGINX
+# Stage 2: Serve using distroless image of NGINX
 FROM gcr.io/distroless/static-debian11
 
 WORKDIR /usr/share/nginx/html
