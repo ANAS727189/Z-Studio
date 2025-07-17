@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-   "postinstall": "cd ../Compiler && LLVM_DIR=/usr/lib/llvm-14/cmake npx node-gyp install --target=20.19.0 && npm install"
+   "postinstall": "cd ../Compiler && LLVM_DIR=/usr/lib/llvm-14/lib/cmake/llvm npx node-gyp install --target=20.19.0 && npm install"
   },
   "keywords": [],
   "author": "",
