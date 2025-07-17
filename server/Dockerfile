@@ -41,19 +41,19 @@ RUN npm run compile-llvm --prefix .
 # Copy compiler source
 COPY Compiler/src ./src
 
-# Stage 2: Final runtime (with compiler bundled)
-FROM gcr.io/distroless/nodejs18-debian11
+# Stage 2: Final runtime (with /bin/sh support)
+FROM node:18-slim
 
-# Copy server files and node_modules
+# Optional: Clean up to keep final image small
+RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app/server
 COPY --from=builder /app/server/node_modules ./node_modules
 COPY server/ .
 
-# Copy compiler files and node_modules
 WORKDIR /app
 COPY --from=builder /app/Compiler ./Compiler
 
-# Set environment variable for compiler path
 ENV COMPILER_PATH=/app/Compiler/src/index.js
 
-CMD ["server/src/server.js"]
+CMD ["node", "server/src/server.js"]
