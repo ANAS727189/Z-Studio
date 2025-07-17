@@ -1,4 +1,6 @@
 llvm-14
+llvm-14-dev
+clang-14
 cmake
 build-essential
 libnode-dev
