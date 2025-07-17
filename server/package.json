@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "start": "node src/server.js",
-    "dev": "nodemon src/server.js"
+    "dev": "nodemon src/server.js",
+    "postinstall": "cd ../../../Compiler && npx node-gyp install --target=20.19.0 && npm install"
   },
   "keywords": [],
   "author": "",
