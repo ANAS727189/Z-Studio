@@ -15,7 +15,7 @@ If you discover a security vulnerability in this project, we appreciate your hel
 
 1. **Where to Report**:
    - Email your findings to [anas23khan083@gmail.com](mailto:anas23khan083@gmail.com). Include a detailed description of the vulnerability, steps to reproduce, and potential impact.
-   - Alternatively, use the GitHub Security Advisory feature to privately report the issue: [Create a Security Advisory](https://github.com/ANAS727189/Z-Studio/SECURITY.md).
+   - Alternatively, use the GitHub Security Advisory feature to privately report the issue: [Create a Security Advisory](https://github.com/ANAS727189/Z-Studio/blob/master/SECURITY.md).
 
 2. **Response Time**:
    - You can expect an initial acknowledgment of your report within 48 hours.
