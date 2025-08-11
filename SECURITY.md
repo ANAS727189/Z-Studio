@@ -14,8 +14,8 @@ The following versions of the project are currently supported with security upda
 If you discover a security vulnerability in this project, we appreciate your help in disclosing it responsibly. Please follow these steps to report a vulnerability:
 
 1. **Where to Report**:
-   - Email your findings to [security@yourdomain.com](mailto:security@yourdomain.com). Include a detailed description of the vulnerability, steps to reproduce, and potential impact.
-   - Alternatively, use the GitHub Security Advisory feature to privately report the issue: [Create a Security Advisory](https://github.com/ANAS727189/your-repo/security/advisories/new).
+   - Email your findings to [anas23khan083@gmail.com](mailto:anas23khan083@gmail.com). Include a detailed description of the vulnerability, steps to reproduce, and potential impact.
+   - Alternatively, use the GitHub Security Advisory feature to privately report the issue: [Create a Security Advisory](https://github.com/ANAS727189/Z-Studio/SECURITY.md).
 
 2. **Response Time**:
    - You can expect an initial acknowledgment of your report within 48 hours.
