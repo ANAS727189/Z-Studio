@@ -42,6 +42,8 @@ interface CodeEditorBoxProps {
   onAddFile: () => void;
   onSave: () => void;
   isAutoSave: boolean;
+  onCloseFile: (fileName: string) => void;
+  onRenameFile: (oldName: string, newName: string) => void;
 }
 
 const CodeEditorBox: React.FC<CodeEditorBoxProps> = ({ 
@@ -56,7 +58,9 @@ const CodeEditorBox: React.FC<CodeEditorBoxProps> = ({
   wordWrap,
   lineNumbers,
   onAddFile,
-  onSave
+  onSave,
+  onCloseFile,
+  onRenameFile
 }) => {
   const [editorError, setEditorError] = useState<string | null>(null);
   const [isEditorReady, setIsEditorReady] = useState(false);
@@ -64,6 +68,8 @@ const CodeEditorBox: React.FC<CodeEditorBoxProps> = ({
   const [showExplorer, setShowExplorer] = useState(false);
   const [currentLine, setCurrentLine] = useState(1);
   const [currentColumn, setCurrentColumn] = useState(1);
+  const [renamingFile, setRenamingFile] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState('');
 
   const langMap = useMemo(() => ({
     'cpp': 'cpp',
@@ -103,6 +109,7 @@ const CodeEditorBox: React.FC<CodeEditorBoxProps> = ({
           },
         });
 
+        
         monaco.editor.defineTheme('dracula', draculaTheme as MonacoEditor.IStandaloneThemeData);
         monaco.editor.defineTheme('github-dark', githubDarkTheme as MonacoEditor.IStandaloneThemeData);
         monaco.editor.defineTheme('github-light', githubLightTheme as MonacoEditor.IStandaloneThemeData);
@@ -134,6 +141,16 @@ const CodeEditorBox: React.FC<CodeEditorBoxProps> = ({
     },
     [theme, onSave]
   );
+
+  const handleStartRename = (file: string) => {
+    setRenamingFile(file);
+    setRenameValue(file);
+  };
+
+  const handleFinishRename = (oldName: string) => {
+    onRenameFile(oldName, renameValue);
+    setRenamingFile(null);
+  };
 
   const editorOptions = useMemo(() => ({
     fontSize: fontSize,
@@ -266,15 +283,47 @@ const CodeEditorBox: React.FC<CodeEditorBoxProps> = ({
                 onClick={() => setActiveFile(file)}
               >
                 <FileText className="w-3 h-3 sm:w-4 sm:h-4 text-gray-400 mr-1 sm:mr-2" />
-                <span className="text-xs sm:text-sm text-gray-200">{file}</span>
+                {renamingFile === file ? (
+                  <input
+                    type="text"
+                    value={renameValue}
+                    onChange={(e) => setRenameValue(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        handleFinishRename(file);
+                      }
+                    }}
+                    onBlur={() => handleFinishRename(file)}
+                    onClick={(e) => e.stopPropagation()}
+                    autoFocus
+                    className="bg-transparent border-none outline-none text-xs sm:text-sm text-gray-200 w-auto"
+                  />
+                ) : (
+                  <span 
+                    className="text-xs sm:text-sm text-gray-200"
+                    onDoubleClick={(e) => {
+                      e.stopPropagation();
+                      handleStartRename(file);
+                    }}
+                  >
+                    {file}
+                  </span>
+                )}
                 {activeFile === file && !files[file].isSaved && <div className="w-2 h-2 bg-purple-400 rounded-full ml-1 sm:ml-2"></div>}
+                <X 
+                  className="w-3 h-3 sm:w-4 sm:h-4 text-gray-400 hover:text-red-400 ml-1 sm:ml-2 cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onCloseFile(file);
+                  }}
+                />
               </div>
             ))}
             <div
               className="flex items-center px-2 sm:px-4 py-2 text-gray-500 hover:text-gray-300 cursor-pointer transition-colors"
               onClick={onAddFile}
             >
-              <span className="text-sm">+</span>
+              <span className="text-2xl">+</span>
             </div>
           </div>
           <div className="flex items-center space-x-1">
@@ -325,7 +374,39 @@ const CodeEditorBox: React.FC<CodeEditorBoxProps> = ({
                     onClick={() => setActiveFile(file)}
                   >
                     <FileText className="w-4 h-4 text-purple-400" />
-                    <span className="text-sm text-gray-200">{file}</span>
+                    {renamingFile === file ? (
+                      <input
+                        type="text"
+                        value={renameValue}
+                        onChange={(e) => setRenameValue(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            handleFinishRename(file);
+                          }
+                        }}
+                        onBlur={() => handleFinishRename(file)}
+                        onClick={(e) => e.stopPropagation()}
+                        autoFocus
+                        className="bg-transparent border-none outline-none text-sm text-gray-200 flex-1"
+                      />
+                    ) : (
+                      <span 
+                        className="text-sm text-gray-200 flex-1"
+                        onDoubleClick={(e) => {
+                          e.stopPropagation();
+                          handleStartRename(file);
+                        }}
+                      >
+                        {file}
+                      </span>
+                    )}
+                    <X 
+                      className="w-4 h-4 text-gray-400 hover:text-red-400 cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onCloseFile(file);
+                      }}
+                    />
                   </div>
                 ))}
               </div>

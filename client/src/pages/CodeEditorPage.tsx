@@ -26,12 +26,13 @@ const fileExtensionMap: Record<LanguageKey, string> = {
   'go': 'go',
 };
 
+
 const CodeEditorPage = () => {
   const [selectedLanguage, setSelectedLanguage] = useState<LanguageKey>('zmm');
   const [files, setFiles] = useState<{ [fileName: string]: { code: string; language: LanguageKey; isSaved: boolean } }>({
-    'main.z--': { code: defaultCodeMap['zmm'], language: 'zmm', isSaved: true },
+    'main.zmm': { code: defaultCodeMap['zmm'], language: 'zmm', isSaved: true },
   });
-  const [activeFile, setActiveFile] = useState('main.z--');
+  const [activeFile, setActiveFile] = useState('main.zmm');
   const [input, setInput] = useState('');
   const [output, setOutput] = useState('');
   const [isCompiling, setIsCompiling] = useState(false);
@@ -159,6 +160,36 @@ const CodeEditorPage = () => {
     setActiveFile(newFileName);
   }, [selectedLanguage, files]);
 
+  const handleCloseFile = useCallback((fileName: string) => {
+    const remainingFiles = Object.keys(files).filter(f => f !== fileName);
+    setFiles(prevFiles => {
+      const updatedFiles = { ...prevFiles };
+      delete updatedFiles[fileName];
+      return updatedFiles;
+    });
+    if (activeFile === fileName) {
+      if (remainingFiles.length > 0) {
+        setActiveFile(remainingFiles[0]);
+      } else {
+        handleAddFile();
+      }
+    }
+  }, [activeFile, files, handleAddFile]);
+
+  const handleRenameFile = useCallback((oldName: string, newName: string) => {
+    if (oldName === newName || !newName.trim()) return;
+    setFiles(prevFiles => {
+      if (prevFiles[newName]) return prevFiles; // Skip if name exists
+      const updatedFiles = { ...prevFiles };
+      updatedFiles[newName] = prevFiles[oldName];
+      delete updatedFiles[oldName];
+      return updatedFiles;
+    });
+    if (activeFile === oldName) {
+      setActiveFile(newName);
+    }
+  }, [activeFile]);
+
   const handleCopy = useCallback(() => {
     navigator.clipboard.writeText(files[activeFile]?.code || '');
   }, [files, activeFile]);
@@ -224,6 +255,8 @@ const CodeEditorPage = () => {
           onAddFile={handleAddFile}
           onSave={handleSave}
           isAutoSave={isAutoSave}
+          onCloseFile={handleCloseFile}
+          onRenameFile={handleRenameFile}
         />
       </div>
       <div className="col-span-1 flex flex-col lg:grid lg:grid-rows-2 gap-3 sm:gap-6 min-h-0">
@@ -241,7 +274,7 @@ const CodeEditorPage = () => {
         </div>
       </div>
     </div>
-  ), [files, activeFile, input, output, isCompiling, error, theme, fontSize, showMinimap, wordWrap, lineNumbers, handleAddFile, isAutoSave, handleSave]);
+  ), [files, activeFile, input, output, isCompiling, error, theme, fontSize, showMinimap, wordWrap, lineNumbers, handleAddFile, isAutoSave, handleSave, handleCloseFile, handleRenameFile]);
 
   return (
     <div className="h-screen flex flex-col bg-[#060111] overflow-hidden">
