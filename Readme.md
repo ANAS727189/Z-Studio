@@ -34,7 +34,7 @@
   * Express‑powered API routes:
 
     * `/z-lang/compile` → compiles Z-- via the custom backend.
-    * `/judge0/compile` → proxies to Judge0 for multi‑language compilation (C++, Java, Python, etc.).
+    * `/judge0/compile` → proxies to Judge0 for multi‑language compilation (C++, Java, Python, Go etc.).
   * Dead‑code filtering, request queuing, and secure sandboxing.
 
 * 🔄 **Multi‑Language Support** via Judge0
