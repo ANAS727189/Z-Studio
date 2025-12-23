@@ -1,16 +1,12 @@
 name: Keep Render Backend Working
 
 on:
-  schedule:
-    - cron: '*/15 * * * *'  # Every 15 minutes
-  workflow_dispatch:         # manual trigger
+  workflow_dispatch:
 
 jobs:
   ping:
     runs-on: ubuntu-latest
     steps:
       - name: Send HTTP ping to Render backend
-        shell: bash
         run: |
-          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" https://z-studio.onrender.com/health-123)
-          echo "Ping response code: $RESPONSE"
+          curl -s https://z-studio.onrender.com/health-123
