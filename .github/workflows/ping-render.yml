@@ -1,6 +1,8 @@
 name: Keep Render Backend Working
 
 on:
+  schedule:
+    - cron: '30 4 * * *'   # once per day
   workflow_dispatch:
 
 jobs:
