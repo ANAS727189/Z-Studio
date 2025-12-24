@@ -34,6 +34,9 @@ app.get('/health-123', (req, res) => {
 import zlangRoutes from './routes/z-lang.routes.js';
 import judge0Routes from './routes/judge0.routes.js';
 
+app.options("/api/zlang/*", cors());
+app.options("/api/judge0/*", cors());
+
 app.use('/api/zlang', zlangRoutes);
 app.use('/api/judge0', judge0Routes);
 
