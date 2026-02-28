@@ -31,7 +31,7 @@
 
 * 🔌 **Server Backend**
 
-  * Express‑powered API routes:
+  * Go-powered API routes:
 
     * `/z-lang/compile` → compiles Z-- via the custom backend.
     * `/judge0/compile` → proxies to Judge0 for multi‑language compilation (C++, Java, Python, Go etc.).
@@ -48,7 +48,7 @@
 ```bash
 Z-studio/
 ├── client/                 # React + Tailwind web IDE
-├── server/                 # Node.js + Express backend routes & controllers
+├── server/                 # Go backend API routes and integrations
 ├── compiler/               # Z-- compiler modules (lexer, parser, AST, codegen)
 ├── docs/                   # Documentation site (Next.js) with architecture diagrams
 ├── LICENSE                 # Open‑source license
@@ -62,6 +62,7 @@ Z-studio/
 ### Prerequisites
 
 * Node.js (>= 16.x)
+* Go (>= 1.22)
 * npm or pnpm
 
 ### Clone and Install
@@ -85,7 +86,7 @@ cd ../compiler && npm install
 cd compiler && npm run watch       # rebuilds on changes
 
 # 2) Launch server API
-git checkout main && cd ../server && npm run dev
+git checkout main && cd ../server && go run ./src/main.go
 
 # 3) Launch web IDE (client)
 cd ../client && npm run dev
