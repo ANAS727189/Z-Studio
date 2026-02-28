@@ -36,7 +36,10 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /app/bin/zstudio-server ./
 FROM node:18-slim
 
 RUN apt-get update \
- && apt-get install -y --no-install-recommends llvm \
+ && apt-get install -y --no-install-recommends \
+      llvm \
+      ca-certificates \
+ && update-ca-certificates \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/*
 
