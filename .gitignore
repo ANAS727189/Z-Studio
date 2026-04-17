@@ -1,2 +1,18 @@
-.vscode
-node_modules/1.txt
+.vscode/
+
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build artifacts
+dist/
+build/
+tmp/
+
+# Logs and local env
+*.log
+.env
+.env.*
+
+# OS/editor
+.DS_Store
