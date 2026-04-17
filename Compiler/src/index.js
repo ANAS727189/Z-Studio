@@ -62,7 +62,7 @@ function main() {
 
     // run as - node ../../../Compiler(Z--)/src/index.js /tmp/temp-uuid.z-- /tmp/output-uuid.
 
-     const source = fs.readFileSync(process.argv[2], 'utf8');
+    const source = fs.readFileSync(process.argv[2], 'utf8');
     const outputBase = process.argv[3];
     const emitter = new Emitter(`${outputBase}.c`);
     let lexer = new Lexer(source);
