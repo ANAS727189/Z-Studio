@@ -16,7 +16,7 @@
 
 ## Key Features
 
-* **Custom Language: Z--**
+**Custom Language: Z--**
 * Minimal and expressive syntax with `start`/`end` blocks, `let` declarations, and first-class functions (`fun`).
 * Built-in control structures (`if`/`else`, `else if`, `while`, `for`, `break`).
 * Static typing with type inference and support for integers, floats, booleans, and strings.
@@ -25,7 +25,7 @@
 * Arrays with index-based read/write, string concatenation.
 
 
-* **From-Scratch Compiler**
+**From-Scratch Compiler**
 1. Lexer ➔ 2. Parser ➔ 3. AST ➔ 4. C Code Generator ➔ 5. LLVM IR Generator
 
 
@@ -34,22 +34,20 @@
 * Dead-code elimination and basic AST optimizations.
 
 
-* **Modern Web-Based Editor**
+**Modern Web-Based Editor**
 * Real-time syntax highlighting for Z-- and popular languages (C++, Java, Python, JavaScript, Go, Rust).
 * Integrated console with stdin/stdout capture and error reporting.
 * Auto-save, multi-file support, and keyboard shortcuts.
 
 
-* **Server Backend**
+**Server Backend**
 * Go-powered API routes:
 * `/z-lang/compile` ➔ compiles Z-- via the custom backend.
 * `/judge0/compile` ➔ proxies to Judge0 for multi-language compilation (C++, Java, Python, Go etc.).
-
-
 * Dead-code filtering, request queuing, and secure sandboxing.
 
 
-* **Multi-Language Support** via Judge0
+**Multi-Language Support** via Judge0
 * Easily run, test, and share code in C, C++, Java, Python, JavaScript, Go, Rust, and more.
 
 
@@ -154,15 +152,15 @@ let octal   = 0o52     // octal
 
 ### Operators
 
-* **Arithmetic:** `+`, `-`, `*`, `/`, `%`
-* **Unary:**
+**Arithmetic:** `+`, `-`, `*`, `/`, `%`
+**Unary:**
 * `++x` (pre-increment)
 * `x--` (post-decrement)
 * `-x` (unary minus/negation)
 
 
-* **Comparison:** `==`, `!=`, `<`, `<=`, `>`, `>=`
-* **Logical & Bitwise:** `&&`, `||`, `&`, `|`, `^`, `%`
+**Comparison:** `==`, `!=`, `<`, `<=`, `>`, `>=`
+**Logical & Bitwise:** `&&`, `||`, `&`, `|`, `^`, `%`
 
 ### Control Flow
 
@@ -332,3 +330,11 @@ Contributions and feature requests are warmly welcome!
 4. Open a **Pull Request**.
 
 ---
+
+## ✍️ Author
+
+Built with love & passion by **Anas** 💻
+
+---
+
+© 2025 Z Studio Contributors. All rights reserved.
