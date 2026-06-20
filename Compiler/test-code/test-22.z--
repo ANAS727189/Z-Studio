@@ -1,0 +1,4 @@
+start
+  let greeting = "Hello, " + "Z--"
+  print(greeting)
+end

@@ -1,0 +1,10 @@
+start
+  let score = 82
+  if score >= 90 {
+    print("A")
+  } else if score >= 75 {
+    print("B")
+  } else {
+    print("C")
+  }
+end

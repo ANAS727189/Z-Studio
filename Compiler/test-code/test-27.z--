@@ -1,0 +1,8 @@
+start
+  let x = 3
+  ++x
+  x--
+  let y = -x
+  print("unary and update operators")
+  print(y)
+end

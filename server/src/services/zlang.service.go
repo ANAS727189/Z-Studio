@@ -2,12 +2,11 @@ package services
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strconv"
 	"strings"
-	"time"
 )
 
 type CompilerError struct {
@@ -20,6 +19,19 @@ type ZLangService struct {
 	CompilerPath string
 }
 
+func findLLI() (string, error) {
+	candidates := []string{"lli", "lli-14", "lli.exe", "lli-14.exe"}
+
+	for _, name := range candidates {
+		if path, err := exec.LookPath(name); err == nil {
+			return path, nil
+		}
+	}
+
+	return "", fmt.Errorf("LLVM interpreter not found in PATH")
+}
+
+
 func NewZLangService(compilerPath string) *ZLangService {
 	return &ZLangService{CompilerPath: compilerPath}
 }
@@ -29,61 +41,56 @@ func (s *ZLangService) Run(code string) (string, string, *CompilerError) {
 	if compilerPath == "" {
 		return "", "", buildCompilerError("COMPILER_PATH is not set", "")
 	}
+
 	info, err := os.Stat(compilerPath)
 	if err != nil || info.IsDir() {
 		return "", "", buildCompilerError("Compiler script not found at: "+compilerPath, "")
 	}
 
-	tempFile, err := os.CreateTemp("/tmp", "temp-*.z--")
+	tempDir, err := os.MkdirTemp("", "zlang-*")
 	if err != nil {
 		return "", "", buildCompilerError(err.Error(), "")
 	}
+	defer os.RemoveAll(tempDir)
 
-	tempFilePath := tempFile.Name()
-	if _, err := tempFile.WriteString(code); err != nil {
-		_ = tempFile.Close()
-		_ = os.Remove(tempFilePath)
+	inputPath := filepath.Join(tempDir, "input.z--")
+	if err := os.WriteFile(inputPath, []byte(code), 0644); err != nil {
 		return "", "", buildCompilerError(err.Error(), "")
 	}
 
-	if err := tempFile.Close(); err != nil {
-		_ = os.Remove(tempFilePath)
-		return "", "", buildCompilerError(err.Error(), "")
-	}
-
-	uniquePart := strings.TrimPrefix(strings.TrimSuffix(filepath.Base(tempFilePath), ".z--"), "temp-")
-	if uniquePart == "" {
-		uniquePart = strconv.FormatInt(time.Now().UnixNano(), 10)
-	}
-
-	outputBase := filepath.Join("/tmp", "output-"+uniquePart)
+	outputBase := filepath.Join(tempDir, "output")
 	outputLLPath := outputBase + ".ll"
 	outputCPath := outputBase + ".c"
 
 	defer func() {
-		_ = os.Remove(tempFilePath)
 		_ = os.Remove(outputLLPath)
 		_ = os.Remove(outputCPath)
 	}()
 
-	compilerOutput, compilerErrLogs, err := runCommand("/tmp", "node", compilerPath, tempFilePath, outputBase)
+	compilerOutput, compilerErrLogs, err := runCommand(tempDir, "node", compilerPath, inputPath, outputBase)
 	if err != nil {
-		message := compilerErrLogs
-		if strings.TrimSpace(message) == "" {
+		message := strings.TrimSpace(compilerErrLogs)
+		if message == "" {
 			message = err.Error()
 		}
 		return "", "", buildCompilerError(message, compilerErrLogs)
 	}
 
-	programOutput, programErrLogs, err := runCommand("/tmp", "lli-14", outputLLPath)
+	lliPath, err := findLLI()
 	if err != nil {
-		message := programErrLogs
-		if strings.TrimSpace(message) == "" {
+		return "", "", buildCompilerError(err.Error(), "")
+	}
+
+	programOutput, programErrLogs, err := runCommand(tempDir, lliPath, outputLLPath)
+	if err != nil {
+		message := strings.TrimSpace(programErrLogs)
+		if message == "" {
 			message = err.Error()
 		}
 		return "", "", buildCompilerError(message, programErrLogs)
 	}
 
+	_ = compilerOutput
 	return compilerOutput, programOutput, nil
 }
 
@@ -106,8 +113,8 @@ func buildCompilerError(message, logs string) *CompilerError {
 		cleanMessage = "Compilation failed"
 	}
 
-	cleanLogs := logs
-	if strings.TrimSpace(cleanLogs) == "" {
+	cleanLogs := strings.TrimSpace(logs)
+	if cleanLogs == "" {
 		cleanLogs = cleanMessage
 	}
 

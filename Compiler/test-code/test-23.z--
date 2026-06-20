@@ -1,0 +1,7 @@
+start
+  let flags = 6 & 3
+  let merged = flags | 8
+  let flipped = merged ^ 2
+  print("bitwise operators")
+  print(flipped)
+end

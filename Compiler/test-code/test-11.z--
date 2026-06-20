@@ -1,0 +1,10 @@
+start
+  let decimal = 42
+  let hex = 0x10
+  let binary = 0b1010
+  let octal = 0o7
+  let total = decimal + hex + binary + octal
+  total = total - 5
+  print("numeric literals and assignment")
+  print(total)
+end

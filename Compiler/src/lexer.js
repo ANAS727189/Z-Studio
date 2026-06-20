@@ -197,6 +197,10 @@ class Lexer {
         token = new Token(this.currChar, TokenType.LPAREN, start_line, start_column);
         } else if (this.currChar === ')') {
         token = new Token(this.currChar, TokenType.RPAREN, start_line, start_column);
+        } else if (this.currChar === '[') {
+        token = new Token(this.currChar, TokenType.LBRACKET, start_line, start_column);
+        } else if (this.currChar === ']') {
+        token = new Token(this.currChar, TokenType.RBRACKET, start_line, start_column);
         } else if (this.currChar === ',') {
         token = new Token(this.currChar, TokenType.COMMA, start_line, start_column);
         } else if (this.currChar === '\n') {

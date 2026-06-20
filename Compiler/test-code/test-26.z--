@@ -1,0 +1,11 @@
+start
+  let count = 0
+  while true {
+    count = count + 1
+    if count == 4 {
+      break
+    }
+  }
+  print("break result")
+  print(count)
+end

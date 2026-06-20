@@ -1,0 +1,13 @@
+start
+  fun max {
+    arg = (a, b)
+    if a > b {
+      return a
+    }
+    return b
+  }
+
+  let bigger = max(12, 19)
+  print("max result")
+  print(bigger)
+end

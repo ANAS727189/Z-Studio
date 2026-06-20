@@ -1,0 +1,10 @@
+start
+  let x = 5
+  let y = 8
+  if x < y && y > 0 {
+    print("both true")
+  }
+  if x > y || y == 8 {
+    print("one true")
+  }
+end

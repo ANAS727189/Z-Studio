@@ -1,541 +1,41 @@
-import llvm from 'llvm-bindings';
 import { TokenType } from './token.js';
 import {
-  ProgramNode, LetNode, PrintNode, InputNode, IfNode, WhileNode, ForNode, BreakNode,
+  ProgramNode, LetNode, ArrayLiteralNode, ArrayAccessNode, ArrayAssignmentNode,
+  PrintNode, InputNode, IfNode, WhileNode, ForNode, BreakNode,
   FunctionNode, CallNode, ReturnNode, BinOpNode, UnaryOpNode, NumberNode, StringNode,
   BooleanNode, VarNode, PrefixOpNode, PostfixOpNode, ExpressionStatementNode, AssignmentNode
 } from './ast.js';
 
 class LLVMGenerator {
   constructor() {
-    // Verify required classes and methods
-    if (!llvm.LLVMContext) throw new Error('llvm.LLVMContext is undefined');
-    if (!llvm.Module) throw new Error('llvm.Module is undefined');
-    if (!llvm.Type) throw new Error('llvm.Type is undefined');
-    if (!llvm.PointerType) throw new Error('llvm.PointerType is undefined');
-    if (!llvm.FunctionType) throw new Error('llvm.FunctionType is undefined');
-    if (!llvm.IRBuilder) throw new Error('llvm.IRBuilder is undefined');
-    if (!llvm.ArrayType) throw new Error('llvm.ArrayType is undefined');
-    if (!llvm.GlobalVariable) throw new Error('llvm.GlobalVariable is undefined');
-    if (!llvm.Constant) throw new Error('llvm.Constant is undefined');
-
-    this.context = new llvm.LLVMContext();
-    this.module = new llvm.Module('compiler', this.context);
-    this.builder = null;
-    this.symbolTable = {}; // {functionName: {varName: ptr}}
-    this.loopExitBlocks = [];
+    this.moduleLines = [
+      'declare i32 @printf(i8*, ...)',
+      'declare i32 @scanf(i8*, ...)'
+    ];
+    this.globalLines = [];
+    this.stringLines = [];
+    this.functionLines = [];
+    this.lines = [];
+    this.symbolTable = new Map();
+    this.globalVariables = new Set();
+    this.globalInfo = new Map();
+    this.localInfo = new Map();
+    this.stringConstants = new Map();
+    this.functionSignatures = new Map();
+    this.loopExitLabels = [];
     this.currentFunction = null;
-    this.idCounter = 0;
-    
-    // Declare printf
-    try {
-      const int8Ty = llvm.Type.getInt8Ty(this.context);
-      const int32Ty = llvm.Type.getInt32Ty(this.context);
-      const voidptrTy = llvm.PointerType.get(int8Ty, 0);
-      const printfTy = llvm.FunctionType.get(int32Ty, [voidptrTy], true);
-      this.printf = llvm.Function.Create(
-        printfTy, 
-        llvm.Function.LinkageTypes.ExternalLinkage,
-        'printf', 
-        this.module
-      );
-    } catch (e) {
-      console.error('Error declaring printf:', e.message);
-      throw e;
-    }
-
-    // Declare scanf
-    try {
-      const int8Ty = llvm.Type.getInt8Ty(this.context);
-      const int32Ty = llvm.Type.getInt32Ty(this.context);
-      const voidptrTy = llvm.PointerType.get(int8Ty, 0);
-      const scanfTy = llvm.FunctionType.get(int32Ty, [voidptrTy], true);
-      this.scanf = llvm.Function.Create(
-        scanfTy, 
-        llvm.Function.LinkageTypes.ExternalLinkage,
-        'scanf', 
-        this.module
-      );
-    } catch (e) {
-      console.error('Error declaring scanf:', e.message);
-      throw e;
-    }
-  }
-
-  getUniqueId() {
-    return this.idCounter++;
-  }
-
-  visit_ProgramNode(node) {
-    const doubleTy = llvm.Type.getDoubleTy(this.context);
-    this.symbolTable['global'] = {}; // Add global scope
-
-    // Collect global variables (e.g., from LetNode outside functions)
-    const mainStatements = node.statements.filter(stmt => !(stmt instanceof FunctionNode));
-    for (const stmt of mainStatements) {
-        if (stmt instanceof LetNode) {
-            const globalVar = new llvm.GlobalVariable(
-                this.module,
-                doubleTy,
-                false, // Not constant
-                llvm.GlobalVariable.LinkageTypes.ExternalLinkage,
-                llvm.ConstantFP.get(doubleTy, 0.0),
-                stmt.name
-            );
-            this.symbolTable['global'][stmt.name] = globalVar;
-        }
-    }
-
-    // Process function definitions
-    const functionStatements = node.statements.filter(stmt => stmt instanceof FunctionNode);
-    for (const funcStmt of functionStatements) {
-        this.visit(funcStmt);
-    }
-
-    // Create main function
-    const int32Ty = llvm.Type.getInt32Ty(this.context);
-    const funcType = llvm.FunctionType.get(int32Ty, [], false);
-    const mainFunc = llvm.Function.Create(funcType, llvm.Function.LinkageTypes.ExternalLinkage, 'main', this.module);
-   const entry = llvm.BasicBlock.Create(this.context, `entry${this.getUniqueId()}`, mainFunc);
-    this.builder = new llvm.IRBuilder(this.context);
-    this.builder.SetInsertPoint(entry);
-    this.currentFunction = 'main';
-    this.symbolTable['main'] = {};
-
-    // Process main statements
-    for (const stmt of mainStatements) {
-        this.visit(stmt);
-    }
-
-    const zeroConst = llvm.ConstantInt.get(int32Ty, 0);
-    this.builder.CreateRet(zeroConst);
-}
-
-  visit_FunctionNode(node) {
-    const doubleTy = llvm.Type.getDoubleTy(this.context);
-    const paramTypes = node.params.map(() => doubleTy);
-    const funcType = llvm.FunctionType.get(doubleTy, paramTypes, false);
-    const func = llvm.Function.Create(funcType, llvm.Function.LinkageTypes.ExternalLinkage, node.name, this.module);
-
-    for (let i = 0; i < node.params.length; i++) {
-      func.getArg(i).setName(node.params[i]);
-    }
-
-    node.params.forEach((param, i) => func.getArg(i).setName(param));
-    const block = llvm.BasicBlock.Create(this.context, `entry${this.getUniqueId()}`, func);
-    const savedBuilder = this.builder;
-    const savedCurrentFunction = this.currentFunction;
-    this.builder = new llvm.IRBuilder(this.context);
-    this.builder.SetInsertPoint(block);
-    this.currentFunction = node.name;
-    this.symbolTable[node.name] = {};
-
-    for (const param of node.params) {
-      const ptr = this.builder.CreateAlloca(doubleTy, null, param);
-      this.builder.CreateStore(func.getArg(node.params.indexOf(param)), ptr);
-      this.symbolTable[node.name][param] = ptr;
-    }
-
-    for (const stmt of node.body) {
-      this.visit(stmt);
-    }
-
-    this.builder = savedBuilder;
-    this.currentFunction = savedCurrentFunction;
-  }
-
-  visit_ReturnNode(node) {
-    const value = this.visit(node.expr);
-    this.builder.CreateRet(value);
-    this.builder.SetInsertPoint(null);  
-  }
-
-  visit_LetNode(node) {
-    const value = this.visit(node.expr);
-    const funcSymbolTable = this.symbolTable[this.currentFunction];
-    if (!(node.name in funcSymbolTable)) {
-      const doubleTy = llvm.Type.getDoubleTy(this.context);
-      const ptr = this.builder.CreateAlloca(doubleTy, null, node.name);
-      funcSymbolTable[node.name] = ptr;
-    }
-    this.builder.CreateStore(value, funcSymbolTable[node.name]);
-  }
-
-  visit_PrintNode(node) {
-    if (node.is_string) {
-      const strVal = node.expr.value.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-      const strWithNewline = strVal + '\n';
-      const int8Ty = llvm.Type.getInt8Ty(this.context);
-      const int32Ty = llvm.Type.getInt32Ty(this.context);
-      const arrayTy = llvm.ArrayType.get(int8Ty, strWithNewline.length + 1);
-      
-      // Create constant array
-      const chars = [];
-      for (let i = 0; i < strWithNewline.length; i++) {
-        chars.push(llvm.ConstantInt.get(int8Ty, strWithNewline.charCodeAt(i)));
-      }
-      chars.push(llvm.ConstantInt.get(int8Ty, 0)); // null terminator
-      
-      const strConst = llvm.ConstantArray.get(arrayTy, chars);
-      const globalStr = new llvm.GlobalVariable(this.module, arrayTy, true, llvm.GlobalVariable.LinkageTypes.InternalLinkage, strConst, `str.${this.getUniqueId()}`);
-
-      const zero = llvm.ConstantInt.get(int32Ty, 0);
-      const strPtr = this.builder.CreateGEP(arrayTy, globalStr, [zero, zero], 'strptr');
-      this.builder.CreateCall(this.printf, [strPtr]);
-    } else {
-      const value = this.visit(node.expr);
-      const fmtStr = '%.2f\n';
-      const int8Ty = llvm.Type.getInt8Ty(this.context);
-      const int32Ty = llvm.Type.getInt32Ty(this.context);
-      const arrayTy = llvm.ArrayType.get(int8Ty, fmtStr.length + 1);
-      
-      // Create format string constant
-      const chars = [];
-      for (let i = 0; i < fmtStr.length; i++) {
-        chars.push(llvm.ConstantInt.get(int8Ty, fmtStr.charCodeAt(i)));
-      }
-      chars.push(llvm.ConstantInt.get(int8Ty, 0)); // null terminator
-      
-      const fmtConst = llvm.ConstantArray.get(arrayTy, chars);
-      const globalFmt = new llvm.GlobalVariable(this.module, arrayTy, true, llvm.GlobalVariable.LinkageTypes.InternalLinkage, fmtConst, `fmt.${this.getUniqueId()}`);
-
-      const zero = llvm.ConstantInt.get(int32Ty, 0);
-      const fmtPtr = this.builder.CreateGEP(arrayTy, globalFmt, [zero, zero], 'fmtptr');
-      this.builder.CreateCall(this.printf, [fmtPtr, value]);
-    }
-  }
-
-  visit_ExpressionStatementNode(node) {
-    this.visit(node.expr);
-}
-
-visit_AssignmentNode(node) {
-    const value = this.visit(node.expr);
-    const funcSymbolTable = this.symbolTable[this.currentFunction];
-    if (!(node.name in funcSymbolTable)) {
-        const doubleTy = llvm.Type.getDoubleTy(this.context);
-        const ptr = this.builder.CreateAlloca(doubleTy, null, node.name);
-        funcSymbolTable[node.name] = ptr;
-    }
-    this.builder.CreateStore(value, funcSymbolTable[node.name]);
-}
-
-  visit_InputNode(node) {
-    const fmtStr = '%lf';
-    const int8Ty = llvm.Type.getInt8Ty(this.context);
-    const int32Ty = llvm.Type.getInt32Ty(this.context);
-    const doubleTy = llvm.Type.getDoubleTy(this.context);
-    const arrayTy = llvm.ArrayType.get(int8Ty, fmtStr.length + 1);
-    
-    // Create format string constant
-    const chars = [];
-    for (let i = 0; i < fmtStr.length; i++) {
-      chars.push(llvm.ConstantInt.get(int8Ty, fmtStr.charCodeAt(i)));
-    }
-    chars.push(llvm.ConstantInt.get(int8Ty, 0)); // null terminator
-    
-    const fmtConst = llvm.ConstantArray.get(arrayTy, chars);
-    const globalFmt = new llvm.GlobalVariable(this.module, arrayTy, true, llvm.GlobalVariable.LinkageTypes.InternalLinkage, fmtConst, `fmt_scanf.${this.getUniqueId()}`);
-
-    const zero = llvm.ConstantInt.get(int32Ty, 0);
-    const fmtPtr = this.builder.CreateGEP(arrayTy, globalFmt, [zero, zero], 'fmtptr');
-
-    const funcSymbolTable = this.symbolTable[this.currentFunction];
-    if (!(node.name in funcSymbolTable)) {
-      const ptr = this.builder.CreateAlloca(doubleTy, null, node.name);
-      funcSymbolTable[node.name] = ptr;
-    }
-
-    const result = this.builder.CreateCall(this.scanf, [fmtPtr, funcSymbolTable[node.name]]);
-    const zeroVal = llvm.ConstantInt.get(int32Ty, 0);
-    const cmp = this.builder.CreateICmpEQ(result, zeroVal, 'cmptmp');
-
-    const func = this.module.getFunction(this.currentFunction) || this.module.getFunction('main');
-    const thenBlock = llvm.BasicBlock.Create(this.context, `input_fail${this.getUniqueId()}`, func);
-    const mergeBlock = llvm.BasicBlock.Create(this.context, `input_cont${this.getUniqueId()}`, func);
-    this.builder.CreateCondBr(cmp, thenBlock, mergeBlock);
-
-    this.builder.SetInsertPoint(thenBlock);
-    this.builder.CreateStore(llvm.ConstantFP.get(doubleTy, 0.0), funcSymbolTable[node.name]);
-    
-    // Clear input buffer
-    const clearFmt = '%*s';
-    const clearArrayTy = llvm.ArrayType.get(int8Ty, clearFmt.length + 1);
-    const clearChars = [];
-    for (let i = 0; i < clearFmt.length; i++) {
-      clearChars.push(llvm.ConstantInt.get(int8Ty, clearFmt.charCodeAt(i)));
-    }
-    clearChars.push(llvm.ConstantInt.get(int8Ty, 0));
-    
-    const clearConst = llvm.ConstantArray.get(clearArrayTy, clearChars);
-    const globalClear = new llvm.GlobalVariable(this.module, clearArrayTy, true, llvm.GlobalVariable.LinkageTypes.InternalLinkage, clearConst, `fmt_clear.${this.getUniqueId()}`);
-    const clearPtr = this.builder.CreateGEP(clearArrayTy, globalClear, [zero, zero], 'clearptr');
-    this.builder.CreateCall(this.scanf, [clearPtr]);
-    this.builder.CreateBr(mergeBlock);
-
-    this.builder.SetInsertPoint(mergeBlock);
-  }
-
- visit_IfNode(node) {
-    const condV = this.visit(node.condition);
-    const fn = this.module.getFunction(this.currentFunction) || this.module.getFunction('main');
-    const thenBB = llvm.BasicBlock.Create(this.context, `then${this.getUniqueId()}`, fn);
-    const elseBB = node.else_block ? llvm.BasicBlock.Create(this.context, `else${this.getUniqueId()}`, fn) : null;
-    const contBB = llvm.BasicBlock.Create(this.context, `ifcont${this.getUniqueId()}`, fn);
-
-    const zero = llvm.ConstantFP.get(llvm.Type.getDoubleTy(this.context), 0.0);
-    const cmp = this.builder.CreateFCmpONE(condV, zero, `cmp${this.getUniqueId()}`);
-    this.builder.CreateCondBr(cmp, thenBB, elseBB || contBB);
-
-    this.builder.SetInsertPoint(thenBB);
-    let thenHasReturn = false;
-    for (const stmt of node.then_block) {
-        this.visit(stmt);
-        if (stmt instanceof ReturnNode) {
-            thenHasReturn = true;
-            break;
-        }
-    }
-    if (!thenHasReturn) {
-        this.builder.CreateBr(contBB);
-    }
-     let elseHasReturn = false;
-    if (elseBB) {
-        this.builder.SetInsertPoint(elseBB);
-        for (const stmt of node.else_block) {
-            this.visit(stmt);
-            if(stmt instanceof ReturnNode) {
-                elseHasReturn = true;
-                break;
-            }
-        }
-        if (!elseHasReturn) {
-            this.builder.CreateBr(contBB);
-        }
-    }
-
-    // Only set insertion point to contBB if it will be used
-    if (!thenHasReturn || !elseBB || (elseBB && !elseHasReturn)) {
-        this.builder.SetInsertPoint(contBB);
-    }
-}
-
-
-  visit_WhileNode(node) {
-    const func = this.module.getFunction(this.currentFunction) || this.module.getFunction('main');
-    const condBB = llvm.BasicBlock.Create(this.context, `while_cond${this.getUniqueId()}`, func);
-    const bodyBlock = llvm.BasicBlock.Create(this.context, `while_body${this.getUniqueId()}`, func);
-    const mergeBlock = llvm.BasicBlock.Create(this.context, `while_cont${this.getUniqueId()}`, func);
-
-    this.builder.CreateBr(condBB);
-    this.builder.SetInsertPoint(condBB);
-    const cond = this.visit(node.condition);
-    const doubleTy = llvm.Type.getDoubleTy(this.context);
-    const zero = llvm.ConstantFP.get(doubleTy, 0.0);
-    const condBool = this.builder.CreateFCmpONE(cond, zero, 'whilecond');
-    this.builder.CreateCondBr(condBool, bodyBlock, mergeBlock);
-
-    this.builder.SetInsertPoint(bodyBlock);
-    this.loopExitBlocks.push(mergeBlock);
-    for (const stmt of node.body) {
-      this.visit(stmt);
-    }
-    this.loopExitBlocks.pop();
-    this.builder.CreateBr(condBB);
-
-    this.builder.SetInsertPoint(mergeBlock);
-  }
-
-  visit_ForNode(node) {
-    this.visit(node.init);
-
-    const func = this.module.getFunction(this.currentFunction) || this.module.getFunction('main');
-    const condBB = llvm.BasicBlock.Create(this.context, `for_cond${this.getUniqueId()}`, func);
-    const bodyBB = llvm.BasicBlock.Create(this.context, `for_body${this.getUniqueId()}`, func);
-    const incrBB = llvm.BasicBlock.Create(this.context, `for_incr${this.getUniqueId()}`, func);
-    const contBB = llvm.BasicBlock.Create(this.context, `for_cont${this.getUniqueId()}`, func);
-
-    this.builder.CreateBr(condBB);
-    this.builder.SetInsertPoint(condBB);
-    const cond = this.visit(node.condition);
-    const doubleTy = llvm.Type.getDoubleTy(this.context);
-    const zero = llvm.ConstantFP.get(doubleTy, 0.0);
-    const condBool = this.builder.CreateFCmpONE(cond, zero, 'forcond');
-    this.builder.CreateCondBr(condBool, bodyBB, contBB);
-
-    this.builder.SetInsertPoint(bodyBB);
-    this.loopExitBlocks.push(contBB);
-    for (const stmt of node.body) {
-      this.visit(stmt);
-    }
-    this.loopExitBlocks.pop();
-    this.builder.CreateBr(incrBB);
-
-    this.builder.SetInsertPoint(incrBB);
-    this.visit(node.increment);
-    this.builder.CreateBr(condBB);
-
-    this.builder.SetInsertPoint(contBB);
-  }
-
-  visit_BreakNode() {
-    if (this.loopExitBlocks.length === 0) {
-      console.error('Break outside loop');
-      return;
-    }
-    const exitBlock = this.loopExitBlocks[this.loopExitBlocks.length - 1];
-    this.builder.CreateBr(exitBlock);
-    
-    const func = this.module.getFunction(this.currentFunction) || this.module.getFunction('main');
-    const afterBB = llvm.BasicBlock.Create(this.context, `after_break${this.getUniqueId()}`, func);
-    this.builder.SetInsertPoint(afterBB);
-  }
-
- visit_BinOpNode(node) {
-    const left = this.visit(node.left);
-    const right = this.visit(node.right);
-    const doubleTy = llvm.Type.getDoubleTy(this.context);
-
-    switch (node.op.tokenKind) {
-        case TokenType.PLUS:
-            return this.builder.CreateFAdd(left, right, 'addtmp');
-        case TokenType.MINUS:
-            return this.builder.CreateFSub(left, right, 'subtmp');
-        case TokenType.ASTERISK:
-            return this.builder.CreateFMul(left, right, 'multmp');
-        case TokenType.SLASH:
-            return this.builder.CreateFDiv(left, right, 'divtmp');
-        case TokenType.MOD: // Add this case
-            return this.builder.CreateFRem(left, right, 'modtmp');
-        case TokenType.EQEQ:
-            const eq = this.builder.CreateFCmpOEQ(left, right, 'eqtmp');
-            return this.builder.CreateUIToFP(eq, doubleTy, 'booltmp');
-        case TokenType.NOTEQ:
-            const ne = this.builder.CreateFCmpONE(left, right, 'netmp');
-            return this.builder.CreateUIToFP(ne, doubleTy, 'booltmp');
-        case TokenType.LT:
-            const lt = this.builder.CreateFCmpOLT(left, right, 'lttmp');
-            return this.builder.CreateUIToFP(lt, doubleTy, 'booltmp');
-        case TokenType.LTEQ:
-            const le = this.builder.CreateFCmpOLE(left, right, 'letmp');
-            return this.builder.CreateUIToFP(le, doubleTy, 'booltmp');
-        case TokenType.GT:
-            const gt = this.builder.CreateFCmpOGT(left, right, 'gttmp');
-            return this.builder.CreateUIToFP(gt, doubleTy, 'booltmp');
-        case TokenType.GTEQ:
-            const ge = this.builder.CreateFCmpOGE(left, right, 'getmp');
-            return this.builder.CreateUIToFP(ge, doubleTy, 'booltmp');
-        case TokenType.AND:
-            const leftBool = this.builder.CreateFCmpONE(left, llvm.ConstantFP.get(doubleTy, 0.0), 'leftbool');
-            const rightBool = this.builder.CreateFCmpONE(right, llvm.ConstantFP.get(doubleTy, 0.0), 'rightbool');
-            const andResult = this.builder.CreateAnd(leftBool, rightBool, 'andtmp');
-            return this.builder.CreateUIToFP(andResult, doubleTy, 'booltmp');
-        case TokenType.OR:
-            const leftBoolOr = this.builder.CreateFCmpONE(left, llvm.ConstantFP.get(doubleTy, 0.0), 'leftboolor');
-            const rightBoolOr = this.builder.CreateFCmpONE(right, llvm.ConstantFP.get(doubleTy, 0.0), 'rightboolor');
-            const orResult = this.builder.CreateOr(leftBoolOr, rightBoolOr, 'ortmp');
-            return this.builder.CreateUIToFP(orResult, doubleTy, 'booltmp');
-        default:
-            console.error(`Unsupported operator: ${node.op.tokenKind}`);
-            return llvm.ConstantFP.get(doubleTy, 0.0);
-    }
-}
-
-  visit_UnaryOpNode(node) {
-    const expr = this.visit(node.expr);
-    if (node.op.tokenKind === TokenType.MINUS) {
-      return this.builder.CreateFNeg(expr, 'negtmp');
-    }
-    return expr;
-  }
-
-  visit_PrefixOpNode(node) {
-    const varNode = node.expr;
-    if (!(varNode instanceof VarNode)) {
-      console.error('Prefix operator can only be applied to variables');
-      const doubleTy = llvm.Type.getDoubleTy(this.context);
-      return llvm.ConstantFP.get(doubleTy, 0.0);
-    }
-    const varName = varNode.name;
-    const funcSymbolTable = this.symbolTable[this.currentFunction];
-    if (!(varName in funcSymbolTable)) {
-      console.error(`Undefined variable: ${varName}`);
-      const doubleTy = llvm.Type.getDoubleTy(this.context);
-      return llvm.ConstantFP.get(doubleTy, 0.0);
-    }
-    const ptr = funcSymbolTable[varName];
-    const doubleTy = llvm.Type.getDoubleTy(this.context);
-    const oldValue = this.builder.CreateLoad(doubleTy, ptr, 'oldval');
-    const one = llvm.ConstantFP.get(doubleTy, 1.0);
-    const newValue = node.op.tokenKind === TokenType.PLUSPLUS
-      ? this.builder.CreateFAdd(oldValue, one, 'inctmp')
-      : this.builder.CreateFSub(oldValue, one, 'dectmp');
-    this.builder.CreateStore(newValue, ptr);
-    return newValue;
-  }
-
-  visit_PostfixOpNode(node) {
-    const varNode = node.expr;
-    if (!(varNode instanceof VarNode)) {
-      console.error('Postfix operator can only be applied to variables');
-      const doubleTy = llvm.Type.getDoubleTy(this.context);
-      return llvm.ConstantFP.get(doubleTy, 0.0);
-    }
-    const varName = varNode.name;
-    const funcSymbolTable = this.symbolTable[this.currentFunction];
-    if (!(varName in funcSymbolTable)) {
-      console.error(`Undefined variable: ${varName}`);
-      const doubleTy = llvm.Type.getDoubleTy(this.context);
-      return llvm.ConstantFP.get(doubleTy, 0.0);
-    }
-    const ptr = funcSymbolTable[varName];
-    const doubleTy = llvm.Type.getDoubleTy(this.context);
-    const oldValue = this.builder.CreateLoad(doubleTy, ptr, 'oldval');
-    const one = llvm.ConstantFP.get(doubleTy, 1.0);
-    const newValue = node.op.tokenKind === TokenType.PLUSPLUS
-      ? this.builder.CreateFAdd(oldValue, one, 'inctmp')
-      : this.builder.CreateFSub(oldValue, one, 'dectmp');
-    this.builder.CreateStore(newValue, ptr);
-    return oldValue;
-  }
-
-  visit_NumberNode(node) {
-    const doubleTy = llvm.Type.getDoubleTy(this.context);
-    return llvm.ConstantFP.get(doubleTy, node.value);
-  }
-
-  visit_BooleanNode(node) {
-    const doubleTy = llvm.Type.getDoubleTy(this.context);
-    return llvm.ConstantFP.get(doubleTy, node.value ? 1.0 : 0.0);
-  }
-
-  visit_VarNode(node) {
-    const funcSymbolTable = this.symbolTable[this.currentFunction] || {};
-    const globalSymbolTable = this.symbolTable['global'] || {};
-    const ptr = funcSymbolTable[node.name] || globalSymbolTable[node.name];
-    if (!ptr) {
-        console.error(`Undefined variable: ${node.name}`);
-        const doubleTy = llvm.Type.getDoubleTy(this.context);
-        return llvm.ConstantFP.get(doubleTy, 0.0);
-    }
-    const doubleTy = llvm.Type.getDoubleTy(this.context);
-    return this.builder.CreateLoad(doubleTy, ptr, node.name);
-}
-
-  visit_CallNode(node) {
-    const func = this.module.getFunction(node.name);
-    if (!func) {
-      console.error(`Undefined function: ${node.name}`);
-      const doubleTy = llvm.Type.getDoubleTy(this.context);
-      return llvm.ConstantFP.get(doubleTy, 0.0);
-    }
-    const args = node.args.map(arg => this.visit(arg));
-    return this.builder.CreateCall(func, args, 'calltmp');
+    this.tempCounter = 0;
+    this.labelCounter = 0;
+    this.stringCounter = 0;
+    this.blockTerminated = false;
   }
 
   visit(node) {
     if (node instanceof ProgramNode) return this.visit_ProgramNode(node);
     if (node instanceof LetNode) return this.visit_LetNode(node);
+    if (node instanceof ArrayLiteralNode) return this.visit_ArrayLiteralNode(node);
+    if (node instanceof ArrayAccessNode) return this.visit_ArrayAccessNode(node);
+    if (node instanceof ArrayAssignmentNode) return this.visit_ArrayAssignmentNode(node);
     if (node instanceof PrintNode) return this.visit_PrintNode(node);
     if (node instanceof InputNode) return this.visit_InputNode(node);
     if (node instanceof IfNode) return this.visit_IfNode(node);
@@ -551,15 +51,731 @@ visit_AssignmentNode(node) {
     if (node instanceof PostfixOpNode) return this.visit_PostfixOpNode(node);
     if (node instanceof NumberNode) return this.visit_NumberNode(node);
     if (node instanceof BooleanNode) return this.visit_BooleanNode(node);
+    if (node instanceof StringNode) return node.value;
     if (node instanceof VarNode) return this.visit_VarNode(node);
-    if (node instanceof ExpressionStatementNode) return this.visit_ExpressionStatementNode(node); 
-    if (node instanceof AssignmentNode) return this.visit_AssignmentNode(node); 
-    console.error(`Unknown node type: ${node.constructor.name}`);
+    if (node instanceof ExpressionStatementNode) return this.visit_ExpressionStatementNode(node);
+    if (node instanceof AssignmentNode) return this.visit_AssignmentNode(node);
+    throw new Error(`No LLVM visitor for ${node?.constructor?.name || 'unknown node'}`);
+  }
+
+  visit_ProgramNode(node) {
+    const functions = node.statements.filter(stmt => stmt instanceof FunctionNode);
+    const mainStatements = node.statements.filter(stmt => !(stmt instanceof FunctionNode));
+
+    for (const fn of functions) {
+      this.functionSignatures.set(fn.name, fn.params);
+    }
+
+    this.globalInfo = this.collectVariables(mainStatements, 'global');
+    this.globalVariables = new Set(this.globalInfo.keys());
+    for (const [name, info] of this.globalInfo.entries()) {
+      this.globalLines.push(this.globalDeclaration(name, info));
+    }
+
+    for (const fn of functions) {
+      this.visit(fn);
+    }
+
+    this.emitMain(mainStatements);
+  }
+
+  visit_FunctionNode(node) {
+    const params = node.params.map(name => `double %arg.${this.clean(name)}`).join(', ');
+    const locals = this.collectVariables(node.body, node.name);
+    for (const param of node.params) {
+      locals.set(param, { kind: 'double' });
+    }
+
+    this.startFunction(node.name);
+    this.emit(`define double @${this.clean(node.name)}(${params}) {`);
+    this.emitLabel('entry');
+    this.symbolTable = new Map();
+    this.localInfo = locals;
+
+    for (const [name, info] of locals.entries()) {
+      const ptr = `%${this.clean(name)}.addr`;
+      this.symbolTable.set(name, ptr);
+      if (info.kind === 'array') {
+        this.emit(`${ptr} = alloca [${info.size} x double]`);
+      } else if (info.kind === 'string') {
+        this.emit(`${ptr} = alloca i8*`);
+      } else {
+        this.emit(`${ptr} = alloca double`);
+      }
+    }
+
+    for (const param of node.params) {
+      this.emit(`store double %arg.${this.clean(param)}, double* ${this.symbolTable.get(param)}`);
+    }
+
+    this.visitStatements(node.body);
+    if (!this.blockTerminated) {
+      this.emit('ret double 0.000000');
+    }
+    this.emit('}');
+    this.finishFunction();
+  }
+
+  visit_LetNode(node) {
+    const info = this.inferExpressionInfo(node.expr);
+    const ptr = this.ensureVariable(node.name, info);
+    this.storeExpression(ptr, info, node.expr, node.name);
+  }
+
+  visit_AssignmentNode(node) {
+    const current = this.lookupVariable(node.name);
+    this.storeExpression(current.ptr, current.info, node.expr, node.name);
+  }
+
+  visit_ArrayAssignmentNode(node) {
+    const target = this.lookupVariable(node.name);
+    if (target.info.kind !== 'array') {
+      throw new Error(`${node.name} is not an array`);
+    }
+    const elementPtr = this.arrayElementPtr(node.name, target, this.visit(node.index));
+    const value = this.visit(node.expr);
+    this.emit(`store double ${value}, double* ${elementPtr}`);
+  }
+
+  visit_PrintNode(node) {
+    if (node.is_string) {
+      const value = node.expr instanceof StringNode ? node.expr.value : String(this.visit(node.expr));
+      const strPtr = this.addString(`${value}\n`);
+      this.emit(`call i32 (i8*, ...) @printf(i8* ${strPtr})`);
+      return;
+    }
+
+    const value = this.expressionValue(node.expr);
+    if (value.kind === 'string') {
+      const fmtPtr = this.addString('%s\n');
+      this.emit(`call i32 (i8*, ...) @printf(i8* ${fmtPtr}, i8* ${value.value})`);
+    } else {
+      const fmtPtr = this.addString('%.2f\n');
+      this.emit(`call i32 (i8*, ...) @printf(i8* ${fmtPtr}, double ${value.value})`);
+    }
+  }
+
+  visit_InputNode(node) {
+    const ptr = this.ensureVariable(node.name);
+    const fmtPtr = this.addString('%lf');
+    const result = this.temp();
+    const failed = this.temp();
+    const failLabel = this.label('input_fail');
+    const contLabel = this.label('input_cont');
+
+    this.emit(`${result} = call i32 (i8*, ...) @scanf(i8* ${fmtPtr}, double* ${ptr})`);
+    this.emit(`${failed} = icmp eq i32 ${result}, 0`);
+    this.emit(`br i1 ${failed}, label %${failLabel}, label %${contLabel}`);
+    this.blockTerminated = true;
+
+    this.emitLabel(failLabel);
+    this.emit(`store double 0.000000, double* ${ptr}`);
+    const clearPtr = this.addString('%*s');
+    this.emit(`call i32 (i8*, ...) @scanf(i8* ${clearPtr})`);
+    this.emit(`br label %${contLabel}`);
+    this.blockTerminated = true;
+
+    this.emitLabel(contLabel);
+  }
+
+  visit_IfNode(node) {
+    const cond = this.toBool(this.visit(node.condition));
+    const thenLabel = this.label('if_then');
+    const elseLabel = node.else_block ? this.label('if_else') : null;
+    const contLabel = this.label('if_cont');
+
+    this.emit(`br i1 ${cond}, label %${thenLabel}, label %${elseLabel || contLabel}`);
+    this.blockTerminated = true;
+
+    this.emitLabel(thenLabel);
+    this.visitStatements(node.then_block);
+    if (!this.blockTerminated) {
+      this.emit(`br label %${contLabel}`);
+      this.blockTerminated = true;
+    }
+
+    if (node.else_block) {
+      this.emitLabel(elseLabel);
+      this.visitStatements(node.else_block);
+      if (!this.blockTerminated) {
+        this.emit(`br label %${contLabel}`);
+        this.blockTerminated = true;
+      }
+    }
+
+    this.emitLabel(contLabel);
+  }
+
+  visit_WhileNode(node) {
+    const condLabel = this.label('while_cond');
+    const bodyLabel = this.label('while_body');
+    const contLabel = this.label('while_cont');
+
+    this.emit(`br label %${condLabel}`);
+    this.blockTerminated = true;
+
+    this.emitLabel(condLabel);
+    const cond = this.toBool(this.visit(node.condition));
+    this.emit(`br i1 ${cond}, label %${bodyLabel}, label %${contLabel}`);
+    this.blockTerminated = true;
+
+    this.emitLabel(bodyLabel);
+    this.loopExitLabels.push(contLabel);
+    this.visitStatements(node.body);
+    this.loopExitLabels.pop();
+    if (!this.blockTerminated) {
+      this.emit(`br label %${condLabel}`);
+      this.blockTerminated = true;
+    }
+
+    this.emitLabel(contLabel);
+  }
+
+  visit_ForNode(node) {
+    this.visit(node.init);
+
+    const condLabel = this.label('for_cond');
+    const bodyLabel = this.label('for_body');
+    const incrLabel = this.label('for_incr');
+    const contLabel = this.label('for_cont');
+
+    this.emit(`br label %${condLabel}`);
+    this.blockTerminated = true;
+
+    this.emitLabel(condLabel);
+    const cond = this.toBool(this.visit(node.condition));
+    this.emit(`br i1 ${cond}, label %${bodyLabel}, label %${contLabel}`);
+    this.blockTerminated = true;
+
+    this.emitLabel(bodyLabel);
+    this.loopExitLabels.push(contLabel);
+    this.visitStatements(node.body);
+    this.loopExitLabels.pop();
+    if (!this.blockTerminated) {
+      this.emit(`br label %${incrLabel}`);
+      this.blockTerminated = true;
+    }
+
+    this.emitLabel(incrLabel);
+    this.visit(node.increment);
+    if (!this.blockTerminated) {
+      this.emit(`br label %${condLabel}`);
+      this.blockTerminated = true;
+    }
+
+    this.emitLabel(contLabel);
+  }
+
+  visit_BreakNode() {
+    const target = this.loopExitLabels[this.loopExitLabels.length - 1];
+    if (!target) {
+      throw new Error('break used outside of a loop');
+    }
+    this.emit(`br label %${target}`);
+    this.blockTerminated = true;
+  }
+
+  visit_ReturnNode(node) {
+    const value = this.expressionValue(node.expr).value;
+    this.emit(`ret double ${value}`);
+    this.blockTerminated = true;
+  }
+
+  visit_BinOpNode(node) {
+    const stringValue = this.stringExpressionLiteral(node);
+    if (stringValue !== null) {
+      return this.addString(stringValue);
+    }
+
+    const left = this.visit(node.left);
+    const right = this.visit(node.right);
+
+    switch (node.op.tokenKind) {
+      case TokenType.PLUS:
+        return this.binary('fadd', left, right, 'addtmp');
+      case TokenType.MINUS:
+        return this.binary('fsub', left, right, 'subtmp');
+      case TokenType.ASTERISK:
+        return this.binary('fmul', left, right, 'multmp');
+      case TokenType.SLASH:
+        return this.binary('fdiv', left, right, 'divtmp');
+      case TokenType.MOD:
+        return this.binary('frem', left, right, 'modtmp');
+      case TokenType.EQEQ:
+        return this.compare('fcmp oeq', left, right);
+      case TokenType.NOTEQ:
+        return this.compare('fcmp one', left, right);
+      case TokenType.LT:
+        return this.compare('fcmp olt', left, right);
+      case TokenType.LTEQ:
+        return this.compare('fcmp ole', left, right);
+      case TokenType.GT:
+        return this.compare('fcmp ogt', left, right);
+      case TokenType.GTEQ:
+        return this.compare('fcmp oge', left, right);
+      case TokenType.AND:
+        return this.logical('and', left, right);
+      case TokenType.OR:
+        return this.logical('or', left, right);
+      case TokenType.BITAND:
+        return this.bitwise('and', left, right);
+      case TokenType.BITOR:
+        return this.bitwise('or', left, right);
+      case TokenType.BITXOR:
+        return this.bitwise('xor', left, right);
+      default:
+        throw new Error(`Unsupported binary operator: ${node.op.tokenKind}`);
+    }
+  }
+
+  visit_UnaryOpNode(node) {
+    const value = this.visit(node.expr);
+    if (node.op.tokenKind === TokenType.MINUS) {
+      const result = this.temp('negtmp');
+      this.emit(`${result} = fsub double 0.000000, ${value}`);
+      return result;
+    }
+    return value;
+  }
+
+  visit_PrefixOpNode(node) {
+    const ptr = this.variablePointerFromUpdate(node.expr, 'prefix');
+    const oldValue = this.load(ptr, 'oldval');
+    const one = '1.000000';
+    const result = this.temp(node.op.tokenKind === TokenType.PLUSPLUS ? 'inctmp' : 'dectmp');
+    const op = node.op.tokenKind === TokenType.PLUSPLUS ? 'fadd' : 'fsub';
+    this.emit(`${result} = ${op} double ${oldValue}, ${one}`);
+    this.emit(`store double ${result}, double* ${ptr}`);
+    return result;
+  }
+
+  visit_PostfixOpNode(node) {
+    const ptr = this.variablePointerFromUpdate(node.expr, 'postfix');
+    const oldValue = this.load(ptr, 'oldval');
+    const one = '1.000000';
+    const result = this.temp(node.op.tokenKind === TokenType.PLUSPLUS ? 'inctmp' : 'dectmp');
+    const op = node.op.tokenKind === TokenType.PLUSPLUS ? 'fadd' : 'fsub';
+    this.emit(`${result} = ${op} double ${oldValue}, ${one}`);
+    this.emit(`store double ${result}, double* ${ptr}`);
+    return oldValue;
+  }
+
+  visit_NumberNode(node) {
+    return this.doubleLiteral(node.value);
+  }
+
+  visit_BooleanNode(node) {
+    return node.value ? '1.000000' : '0.000000';
+  }
+
+  visit_VarNode(node) {
+    const target = this.lookupVariable(node.name);
+    if (target.info.kind === 'string') {
+      return this.loadString(target.ptr, this.clean(node.name));
+    }
+    if (target.info.kind === 'array') {
+      throw new Error(`Cannot use array ${node.name} without an index`);
+    }
+    return this.load(target.ptr, this.clean(node.name));
+  }
+
+  visit_ArrayAccessNode(node) {
+    const target = this.lookupVariable(node.name);
+    if (target.info.kind !== 'array') {
+      throw new Error(`${node.name} is not an array`);
+    }
+    const elementPtr = this.arrayElementPtr(node.name, target, this.visit(node.index));
+    return this.load(elementPtr, `${this.clean(node.name)}idx`);
+  }
+
+  visit_ArrayLiteralNode() {
+    throw new Error('Array literals can only be used in let declarations or assignments');
+  }
+
+  visit_CallNode(node) {
+    if (!this.functionSignatures.has(node.name)) {
+      throw new Error(`Undefined function: ${node.name}`);
+    }
+    const args = node.args.map(arg => `double ${this.expressionValue(arg).value}`).join(', ');
+    const result = this.temp('calltmp');
+    this.emit(`${result} = call double @${this.clean(node.name)}(${args})`);
+    return result;
+  }
+
+  visit_ExpressionStatementNode(node) {
+    this.visit(node.expr);
+  }
+
+  emitMain(statements) {
+    this.startFunction('main');
+    this.symbolTable = new Map();
+    this.emit('define i32 @main() {');
+    this.emitLabel('entry');
+    this.visitStatements(statements);
+    if (!this.blockTerminated) {
+      this.emit('ret i32 0');
+    }
+    this.emit('}');
+    this.finishFunction();
+  }
+
+  visitStatements(statements) {
+    for (const stmt of statements) {
+      if (this.blockTerminated) break;
+      this.visit(stmt);
+    }
+  }
+
+  collectVariables(nodes, scope) {
+    const variables = new Map();
+    const remember = node => {
+      if (!node || !node.name) return;
+      const info = node.expr ? this.inferExpressionInfo(node.expr) : { kind: 'double' };
+      if (!variables.has(node.name) || variables.get(node.name).kind === 'double') {
+        variables.set(node.name, info);
+      }
+    };
+    const walk = node => {
+      if (!node) return;
+      if (node instanceof LetNode || node instanceof AssignmentNode) {
+        remember(node);
+        if (node.expr) walk(node.expr);
+      } else if (node instanceof ArrayAssignmentNode) {
+        if (!variables.has(node.name)) {
+          variables.set(node.name, { kind: 'array', size: 1 });
+        }
+        walk(node.index);
+        walk(node.expr);
+      } else if (node instanceof InputNode) {
+        variables.set(node.name, { kind: 'double' });
+      } else if (node instanceof IfNode) {
+        walk(node.condition);
+        node.then_block.forEach(walk);
+        if (node.else_block) node.else_block.forEach(walk);
+      } else if (node instanceof WhileNode) {
+        walk(node.condition);
+        node.body.forEach(walk);
+      } else if (node instanceof ForNode) {
+        walk(node.init);
+        walk(node.condition);
+        walk(node.increment);
+        node.body.forEach(walk);
+      } else if (node instanceof FunctionNode) {
+        node.body.forEach(walk);
+      } else if (node instanceof ExpressionStatementNode) {
+        walk(node.expr);
+      } else if (node instanceof ReturnNode || node instanceof UnaryOpNode || node instanceof PrefixOpNode || node instanceof PostfixOpNode || node instanceof PrintNode) {
+        walk(node.expr);
+      } else if (node instanceof BinOpNode) {
+        walk(node.left);
+        walk(node.right);
+      } else if (node instanceof ArrayLiteralNode) {
+        node.elements.forEach(walk);
+      } else if (node instanceof ArrayAccessNode) {
+        walk(node.index);
+      } else if (node instanceof CallNode) {
+        node.args.forEach(walk);
+      }
+    };
+    nodes.forEach(walk);
+    if (scope === 'global') {
+      return variables;
+    }
+    return variables;
+  }
+
+  ensureVariable(name, info = { kind: 'double' }) {
+    if (this.currentFunction === 'main') {
+      if (!this.globalVariables.has(name)) {
+        this.globalVariables.add(name);
+        this.globalInfo.set(name, info);
+        this.globalLines.push(this.globalDeclaration(name, info));
+      }
+      return `@${this.clean(name)}`;
+    }
+    if (!this.symbolTable.has(name)) {
+      throw new Error(`Undefined variable: ${name}`);
+    }
+    return this.symbolTable.get(name);
+  }
+
+  lookupVariable(name) {
+    if (this.symbolTable.has(name)) {
+      return {
+        ptr: this.symbolTable.get(name),
+        info: this.localInfo.get(name) || { kind: 'double' }
+      };
+    }
+    if (this.globalVariables.has(name)) {
+      return {
+        ptr: `@${this.clean(name)}`,
+        info: this.globalInfo.get(name) || { kind: 'double' }
+      };
+    }
+    throw new Error(`Undefined variable: ${name}`);
+  }
+
+  variablePointerFromUpdate(expr, kind) {
+    if (!(expr instanceof VarNode)) {
+      throw new Error(`${kind} operator can only be applied to variables`);
+    }
+    const target = this.lookupVariable(expr.name);
+    if (target.info.kind !== 'double') {
+      throw new Error(`${kind} operator can only be applied to numeric variables`);
+    }
+    return target.ptr;
+  }
+
+  binary(op, left, right, hint) {
+    const result = this.temp(hint);
+    this.emit(`${result} = ${op} double ${left}, ${right}`);
+    return result;
+  }
+
+  compare(op, left, right) {
+    const cmp = this.temp('cmptmp');
+    const result = this.temp('booltmp');
+    this.emit(`${cmp} = ${op} double ${left}, ${right}`);
+    this.emit(`${result} = uitofp i1 ${cmp} to double`);
+    return result;
+  }
+
+  logical(op, left, right) {
+    const leftBool = this.toBool(left);
+    const rightBool = this.toBool(right);
+    const boolResult = this.temp(`${op}tmp`);
+    const result = this.temp('booltmp');
+    this.emit(`${boolResult} = ${op} i1 ${leftBool}, ${rightBool}`);
+    this.emit(`${result} = uitofp i1 ${boolResult} to double`);
+    return result;
+  }
+
+  bitwise(op, left, right) {
+    const leftInt = this.temp('bitleft');
+    const rightInt = this.temp('bitright');
+    const intResult = this.temp('bittmp');
+    const result = this.temp('bitfp');
+    this.emit(`${leftInt} = fptosi double ${left} to i64`);
+    this.emit(`${rightInt} = fptosi double ${right} to i64`);
+    this.emit(`${intResult} = ${op} i64 ${leftInt}, ${rightInt}`);
+    this.emit(`${result} = sitofp i64 ${intResult} to double`);
+    return result;
+  }
+
+  toBool(value) {
+    const result = this.temp('boolcond');
+    this.emit(`${result} = fcmp one double ${value}, 0.000000`);
+    return result;
+  }
+
+  load(ptr, hint) {
+    const result = this.temp(hint);
+    this.emit(`${result} = load double, double* ${ptr}`);
+    return result;
+  }
+
+  loadString(ptr, hint) {
+    const result = this.temp(hint);
+    this.emit(`${result} = load i8*, i8** ${ptr}`);
+    return result;
+  }
+
+  globalDeclaration(name, info) {
+    const cleanName = this.clean(name);
+    if (info.kind === 'array') {
+      return `@${cleanName} = global [${info.size} x double] zeroinitializer`;
+    }
+    if (info.kind === 'string') {
+      return `@${cleanName} = global i8* null`;
+    }
+    return `@${cleanName} = global double 0.000000`;
+  }
+
+  inferExpressionInfo(node) {
+    if (node instanceof ArrayLiteralNode) {
+      return { kind: 'array', size: Math.max(node.elements.length, 1) };
+    }
+    if (node instanceof StringNode) {
+      return { kind: 'string' };
+    }
+    if (node instanceof VarNode) {
+      try {
+        return this.lookupVariable(node.name).info;
+      } catch {
+        return { kind: 'double' };
+      }
+    }
+    if (node instanceof BinOpNode && node.op.tokenKind === TokenType.PLUS && this.stringExpressionLiteral(node) !== null) {
+      return { kind: 'string' };
+    }
+    return { kind: 'double' };
+  }
+
+  expressionValue(node) {
+    const info = this.inferExpressionInfo(node);
+    if (info.kind === 'string') {
+      return { kind: 'string', value: this.emitStringExpression(node) };
+    }
+    if (info.kind === 'array') {
+      throw new Error('Array value requires an index');
+    }
+    return { kind: 'double', value: this.visit(node) };
+  }
+
+  storeExpression(ptr, info, expr, name) {
+    if (info.kind === 'array') {
+      if (!(expr instanceof ArrayLiteralNode)) {
+        throw new Error(`Array ${name} can only be assigned from an array literal`);
+      }
+      this.storeArrayLiteral(ptr, info, expr);
+      return;
+    }
+    if (info.kind === 'string') {
+      const value = this.emitStringExpression(expr);
+      this.emit(`store i8* ${value}, i8** ${ptr}`);
+      const literal = this.stringExpressionLiteral(expr);
+      if (literal !== null) {
+        this.stringConstants.set(this.stringConstantKey(name), literal);
+      }
+      return;
+    }
+    const value = this.expressionValue(expr).value;
+    this.emit(`store double ${value}, double* ${ptr}`);
+  }
+
+  storeArrayLiteral(ptr, info, expr) {
+    for (let i = 0; i < info.size; i++) {
+      const element = expr.elements[i] || new NumberNode(0);
+      const elementPtr = this.arrayElementPtrFromRaw(ptr, info, this.doubleLiteral(i));
+      this.emit(`store double ${this.expressionValue(element).value}, double* ${elementPtr}`);
+    }
+  }
+
+  arrayElementPtr(name, target, indexValue) {
+    return this.arrayElementPtrFromRaw(target.ptr, target.info, indexValue, this.clean(name));
+  }
+
+  arrayElementPtrFromRaw(ptr, info, indexValue, hint = 'array') {
+    const index = this.temp(`${hint}idx`);
+    const elementPtr = this.temp(`${hint}ptr`);
+    this.emit(`${index} = fptosi double ${indexValue} to i64`);
+    this.emit(`${elementPtr} = getelementptr inbounds [${info.size} x double], [${info.size} x double]* ${ptr}, i32 0, i64 ${index}`);
+    return elementPtr;
+  }
+
+  emitStringExpression(node) {
+    const literal = this.stringExpressionLiteral(node);
+    if (literal !== null) {
+      return this.addString(literal);
+    }
+    if (node instanceof VarNode) {
+      const target = this.lookupVariable(node.name);
+      if (target.info.kind !== 'string') {
+        throw new Error(`${node.name} is not a string`);
+      }
+      return this.loadString(target.ptr, this.clean(node.name));
+    }
+    throw new Error('String expression must be a string literal, string variable, or literal concatenation');
+  }
+
+  stringExpressionLiteral(node) {
+    if (node instanceof StringNode) {
+      return node.value;
+    }
+    if (node instanceof VarNode) {
+      const scoped = this.stringConstants.get(this.stringConstantKey(node.name));
+      if (scoped !== undefined) return scoped;
+      return this.stringConstants.get(`global:${node.name}`) ?? null;
+    }
+    if (node instanceof BinOpNode && node.op.tokenKind === TokenType.PLUS) {
+      const left = this.stringExpressionLiteral(node.left);
+      const right = this.stringExpressionLiteral(node.right);
+      if (left !== null && right !== null) {
+        return left + right;
+      }
+    }
     return null;
-}
+  }
+
+  stringConstantKey(name) {
+    const scope = this.currentFunction === 'main' ? 'global' : this.currentFunction || 'global';
+    return `${scope}:${name}`;
+  }
+
+  addString(value) {
+    const name = `@.str.${this.stringCounter++}`;
+    const { body, length } = this.llvmString(value);
+    this.stringLines.push(`${name} = private unnamed_addr constant [${length} x i8] c"${body}"`);
+    return `getelementptr inbounds ([${length} x i8], [${length} x i8]* ${name}, i32 0, i32 0)`;
+  }
+
+  llvmString(value) {
+    let body = '';
+    let length = 1;
+    for (const char of value) {
+      const code = char.charCodeAt(0);
+      length++;
+      if (code === 10) body += '\\0A';
+      else if (code === 9) body += '\\09';
+      else if (code === 34) body += '\\22';
+      else if (code === 92) body += '\\5C';
+      else if (code < 32 || code > 126) body += `\\${code.toString(16).toUpperCase().padStart(2, '0')}`;
+      else body += char;
+    }
+    body += '\\00';
+    return { body, length };
+  }
+
+  startFunction(name) {
+    this.currentFunction = name;
+    this.lines = [];
+    this.blockTerminated = false;
+  }
+
+  finishFunction() {
+    this.functionLines.push(...this.lines, '');
+    this.currentFunction = null;
+    this.lines = [];
+  }
+
+  emit(line) {
+    this.lines.push(line);
+  }
+
+  emitLabel(label) {
+    this.lines.push(`${label}:`);
+    this.blockTerminated = false;
+  }
+
+  temp(hint = 'tmp') {
+    return `%${hint}.${this.tempCounter++}`;
+  }
+
+  label(prefix) {
+    return `${prefix}.${this.labelCounter++}`;
+  }
+
+  clean(name) {
+    return String(name).replace(/[^A-Za-z0-9_$.-]/g, '_');
+  }
+
+  doubleLiteral(value) {
+    const number = Number(value);
+    if (!Number.isFinite(number)) {
+      throw new Error(`Invalid numeric literal: ${value}`);
+    }
+    return number.toFixed(6);
+  }
 
   generate() {
-    return this.module.print();
+    return [
+      ...this.moduleLines,
+      '',
+      ...this.globalLines,
+      ...this.stringLines,
+      '',
+      ...this.functionLines
+    ].join('\n');
   }
 }
 
