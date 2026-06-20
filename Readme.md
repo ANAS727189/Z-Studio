@@ -1,5 +1,8 @@
 # Z Studio
 
+[![Release Version](https://img.shields.io/badge/v-1.0.0-blue.svg)](https://github.com/yourusername/Z-studio/releases)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](./LICENSE)
+
 **Z Studio** is a full-stack development ecosystem for the **Z--** programming language designed to deliver a seamless authoring, compilation, and execution experience. Whether you're writing language tutorials, building algorithms, or exploring new language features, Z Studio brings compiler theory and modern web-IDE convenience together in one unified platform.
 
 ---
