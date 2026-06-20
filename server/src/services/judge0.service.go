@@ -41,6 +41,9 @@ func (s *Judge0Service) CompileWithJudge0(ctx context.Context, payload schema.Ju
 	}
 
 	url := fmt.Sprintf("%s/submissions?base64_encoded=false&wait=true", strings.TrimRight(s.Judge0BaseURI, "/"))
+	// fmt.Printf("URL: %s\n", url)
+	// fmt.Printf("Payload: %+v\n", payload)
+	// fmt.Printf("Host: %s\n", s.RapidAPIHostName)
 	return s.doRequest(ctx, http.MethodPost, url, payload)
 }
 
@@ -79,8 +82,12 @@ func (s *Judge0Service) doRequest(ctx context.Context, method, url string, paylo
 	}
 
 	if resp.StatusCode >= http.StatusBadRequest {
-		return nil, fmt.Errorf("Request failed with status code %d", resp.StatusCode)
-	}
+	return nil, fmt.Errorf(
+		"Judge0 error: status=%d body=%s",
+		resp.StatusCode,
+		string(responseBody),
+	)
+}
 
 	if len(responseBody) == 0 {
 		return map[string]any{}, nil

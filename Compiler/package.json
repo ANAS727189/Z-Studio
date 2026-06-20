@@ -6,21 +6,17 @@
   "scripts": {
     "start": "node src/index.js",
     "test": "vitest",
-    "test:ui": "vitest --ui",
-     "compile-llvm": "cmake-js compile --directory node_modules/llvm-bindings"
+    "test:ui": "vitest --ui"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "express": "^5.1.0",
-    "llvm-bindings": "^0.4.2",
-    "node-addon-api": "^8.4.0"
+    "express": "^5.1.0"
   },
   "devDependencies": {
     "@vitest/ui": "^3.2.4",
-    "cmake-js": "^7.3.1",
     "vitest": "^3.2.4"
   }
 }

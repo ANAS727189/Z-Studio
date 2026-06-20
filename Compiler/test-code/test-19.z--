@@ -1,0 +1,6 @@
+start
+  let nums = [2, 4, 6, 8]
+  let sum = nums[0] + nums[1] + nums[2] + nums[3]
+  print("array sum")
+  print(sum)
+end

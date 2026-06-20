@@ -1,0 +1,7 @@
+start
+  let values = [1, 1, 1]
+  values[1] = 5
+  values[2] = values[1] + 4
+  print("array assignment")
+  print(values[0] + values[1] + values[2])
+end

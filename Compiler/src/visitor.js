@@ -1,6 +1,7 @@
 import { TokenType } from './token.js';
 import {
-  ProgramNode, LetNode, PrintNode, InputNode, IfNode, WhileNode, ForNode, BreakNode,
+  ProgramNode, LetNode, ArrayLiteralNode, ArrayAccessNode, ArrayAssignmentNode,
+  PrintNode, InputNode, IfNode, WhileNode, ForNode, BreakNode,
   FunctionNode, CallNode, ReturnNode, BinOpNode, UnaryOpNode, NumberNode, StringNode,
   BooleanNode, VarNode, PrefixOpNode, PostfixOpNode, ExpressionStatementNode, AssignmentNode
 } from './ast.js';
@@ -15,6 +16,8 @@ class CodeGenerator {
         this.functionDefinitions = [];
         this.globalVariables = new Set();
         this.localVariables = new Map();
+        this.globalVariableTypes = new Map();
+        this.localVariableTypes = new Map();
         this.inFunction = false;
         this.currentFunction = 'global';
     }
@@ -75,7 +78,7 @@ class CodeGenerator {
             headerParts.push('');
             headerParts.push('// Global variable declarations');
             for (const varName of this.globalVariables) {
-                headerParts.push(`double ${varName};`);
+                headerParts.push(this.declarationFor(varName, this.globalVariableTypes.get(varName)));
             }
         }
         
@@ -91,31 +94,22 @@ class CodeGenerator {
     _collectVariables(node, scope) {
         if (!node) return;
         
-        if (node instanceof LetNode || node instanceof InputNode) {
-            if (scope === 'global') {
-                this.globalVariables.add(node.name);
-            } else {
-                if (!this.localVariables.has(scope)) {
-                    this.localVariables.set(scope, new Set());
-                }
-                this.localVariables.get(scope).add(node.name);
-            }
+        if (node instanceof LetNode) {
+            this._rememberVariable(node.name, scope, this.inferType(node.expr));
+            this._collectVariables(node.expr, scope);
+        } else if (node instanceof InputNode) {
+            this._rememberVariable(node.name, scope, { kind: 'double' });
         } else if (node instanceof AssignmentNode) {
-            // Assignment can create variables
-            if (scope === 'global') {
-                this.globalVariables.add(node.name);
-            } else {
-                if (!this.localVariables.has(scope)) {
-                    this.localVariables.set(scope, new Set());
-                }
-                this.localVariables.get(scope).add(node.name);
-            }
-            // Also check the expression
+            this._rememberVariable(node.name, scope, this.inferType(node.expr));
+            this._collectVariables(node.expr, scope);
+        } else if (node instanceof ArrayAssignmentNode) {
+            this._collectVariables(node.index, scope);
             this._collectVariables(node.expr, scope);
         } else if (node instanceof FunctionNode) {
             const funcScope = node.name;
             this.functions.add(funcScope);
             this.localVariables.set(funcScope, new Set(node.params));
+            this.localVariableTypes.set(funcScope, new Map(node.params.map(param => [param, { kind: 'double' }])));
             for (const stmt of node.body) {
                 this._collectVariables(stmt, funcScope);
             }
@@ -140,6 +134,10 @@ class CodeGenerator {
         } else if (node instanceof BinOpNode) {
             this._collectVariables(node.left, scope);
             this._collectVariables(node.right, scope);
+        } else if (node instanceof ArrayLiteralNode) {
+            for (const element of node.elements) this._collectVariables(element, scope);
+        } else if (node instanceof ArrayAccessNode) {
+            this._collectVariables(node.index, scope);
         } else if (node instanceof UnaryOpNode || node instanceof PrefixOpNode || node instanceof PostfixOpNode) {
             this._collectVariables(node.expr, scope);
         } else if (node instanceof ReturnNode) {
@@ -152,6 +150,14 @@ class CodeGenerator {
     }
 
     visit_LetNode(node) {
+        if (node.expr instanceof ArrayLiteralNode) {
+            node.expr.elements.forEach((element, index) => {
+                const code = `${node.name}[${index}] = ${this.visit(element)};`;
+                if (this.inFunction) this.addFunctionCode(code);
+                else this.addCode(code);
+            });
+            return;
+        }
         const exprCode = this.visit(node.expr);
         const code = `${node.name} = ${exprCode};`;
         if (this.inFunction) this.addFunctionCode(code);
@@ -182,6 +188,14 @@ class CodeGenerator {
         } else {
             this.addCode(code);
         }
+    }
+
+    visit_ArrayAssignmentNode(node) {
+        const indexCode = this.visit(node.index);
+        const exprCode = this.visit(node.expr);
+        const code = `${node.name}[(int)${indexCode}] = ${exprCode};`;
+        if (this.inFunction) this.addFunctionCode(code);
+        else this.addCode(code);
     }
 
     visit_VarNode(node) {
@@ -327,7 +341,8 @@ visit_ForNode(node) {
         const localVars = this.localVariables.get(node.name);
         for (const varName of localVars) {
             if (!node.params.includes(varName)) {
-                this.addFunctionCode(`double ${varName};`);
+                const type = this.localVariableTypes.get(node.name)?.get(varName);
+                this.addFunctionCode(this.declarationFor(varName, type));
             }
         }
         
@@ -352,6 +367,10 @@ visit_ForNode(node) {
     }
 
 visit_BinOpNode(node) {
+    const stringValue = this.stringLiteralExpression(node);
+    if (stringValue !== null) {
+        return `"${stringValue.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+    }
     const left = this.visit(node.left);
     const right = this.visit(node.right);
     const opMap = {
@@ -367,6 +386,9 @@ visit_BinOpNode(node) {
         [TokenType.GTEQ]: '>=',
         [TokenType.AND]: '&&',
         [TokenType.OR]: '||',
+        [TokenType.BITAND]: '&',
+        [TokenType.BITOR]: '|',
+        [TokenType.BITXOR]: '^',
         [TokenType.MOD]: '%' 
     };
     
@@ -375,6 +397,9 @@ visit_BinOpNode(node) {
     // Handle modulo operator specially - cast to int
     if (node.op.tokenKind === TokenType.MOD) {
         return `((int)${left} % (int)${right})`;
+    }
+    if ([TokenType.BITAND, TokenType.BITOR, TokenType.BITXOR].includes(node.op.tokenKind)) {
+        return `((int)${left} ${opText} (int)${right})`;
     }
     
     return `(${left} ${opText} ${right})`;
@@ -402,11 +427,64 @@ visit_BinOpNode(node) {
     }
 
     visit_StringNode(node) {
-        return `"${node.value}"`;
+        return `"${node.value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
     }
 
     visit_BooleanNode(node) {
         return node.value ? '1.0' : '0.0';
+    }
+
+    visit_ArrayLiteralNode(node) {
+        return `{ ${node.elements.map(element => this.visit(element)).join(', ')} }`;
+    }
+
+    visit_ArrayAccessNode(node) {
+        return `${node.name}[(int)${this.visit(node.index)}]`;
+    }
+
+    _rememberVariable(name, scope, type = { kind: 'double' }) {
+        if (scope === 'global') {
+            this.globalVariables.add(name);
+            if (!this.globalVariableTypes.has(name) || this.globalVariableTypes.get(name).kind === 'double') {
+                this.globalVariableTypes.set(name, type);
+            }
+            return;
+        }
+        if (!this.localVariables.has(scope)) {
+            this.localVariables.set(scope, new Set());
+        }
+        if (!this.localVariableTypes.has(scope)) {
+            this.localVariableTypes.set(scope, new Map());
+        }
+        this.localVariables.get(scope).add(name);
+        if (!this.localVariableTypes.get(scope).has(name) || this.localVariableTypes.get(scope).get(name).kind === 'double') {
+            this.localVariableTypes.get(scope).set(name, type);
+        }
+    }
+
+    inferType(node) {
+        if (node instanceof ArrayLiteralNode) return { kind: 'array', size: Math.max(node.elements.length, 1) };
+        if (node instanceof StringNode) return { kind: 'string' };
+        if (node instanceof BinOpNode && node.op.tokenKind === TokenType.PLUS && this.stringLiteralExpression(node) !== null) {
+            return { kind: 'string' };
+        }
+        return { kind: 'double' };
+    }
+
+    declarationFor(name, type = { kind: 'double' }) {
+        if (type.kind === 'array') return `double ${name}[${type.size}];`;
+        if (type.kind === 'string') return `const char* ${name};`;
+        return `double ${name};`;
+    }
+
+    stringLiteralExpression(node) {
+        if (node instanceof StringNode) return node.value;
+        if (node instanceof BinOpNode && node.op.tokenKind === TokenType.PLUS) {
+            const left = this.stringLiteralExpression(node.left);
+            const right = this.stringLiteralExpression(node.right);
+            if (left !== null && right !== null) return left + right;
+        }
+        return null;
     }
 
     visit(node) {

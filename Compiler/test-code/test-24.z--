@@ -1,0 +1,7 @@
+start
+  let nameCode
+  print("Enter a number:")
+  input(nameCode)
+  print("You entered:")
+  print(nameCode)
+end

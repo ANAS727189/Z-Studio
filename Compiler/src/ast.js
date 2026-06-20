@@ -18,11 +18,35 @@ class AssignmentNode extends ASTNode {
     }
 }
 
+class ArrayAssignmentNode extends ASTNode {
+    constructor(name, index, expr) {
+        super();
+        this.name = name;
+        this.index = index;
+        this.expr = expr;
+    }
+}
+
 class LetNode extends ASTNode {
     constructor(name, expr) {
         super();
         this.name = name;
         this.expr = expr;
+    }
+}
+
+class ArrayLiteralNode extends ASTNode {
+    constructor(elements) {
+        super();
+        this.elements = elements;
+    }
+}
+
+class ArrayAccessNode extends ASTNode {
+    constructor(name, index) {
+        super();
+        this.name = name;
+        this.index = index;
     }
 }
 
@@ -140,7 +164,7 @@ class UnaryOpNode extends ASTNode {
 class NumberNode extends ASTNode {
     constructor(value) {
         super();
-        this.value = parseFloat(value);
+        this.value = Number(value);
     }
 }
 
@@ -173,7 +197,8 @@ class ExpressionStatementNode extends ASTNode {
 }
 
 export {
-    ProgramNode, AssignmentNode, LetNode, PrintNode, InputNode, IfNode, WhileNode, ForNode, BreakNode,
+    ProgramNode, AssignmentNode, ArrayAssignmentNode, LetNode, ArrayLiteralNode, ArrayAccessNode,
+    PrintNode, InputNode, IfNode, WhileNode, ForNode, BreakNode,
     FunctionNode, CallNode, PrefixOpNode, PostfixOpNode, ReturnNode, BinOpNode, UnaryOpNode, 
     NumberNode, StringNode, BooleanNode, VarNode, ExpressionStatementNode
 };

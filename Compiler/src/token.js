@@ -50,7 +50,9 @@ const TokenType = {
     RBRACE: 302,
     LPAREN: 303,
     RPAREN: 304,
-    COMMA: 305
+    COMMA: 305,
+    LBRACKET: 306,
+    RBRACKET: 307
 };
 
 class Token{

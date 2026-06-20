@@ -1,0 +1,4 @@
+start
+  let message = "Hello from a string variable"
+  print(message)
+end

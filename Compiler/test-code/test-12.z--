@@ -1,0 +1,10 @@
+start
+  let a = 10
+  let b = 3
+  print("arithmetic operators")
+  print(a + b)
+  print(a - b)
+  print(a * b)
+  print(a / b)
+  print(a % b)
+end

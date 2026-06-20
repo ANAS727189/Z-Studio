@@ -85,6 +85,7 @@ class Parser {
         TokenType.FUN,
         TokenType.RETURN,
         TokenType.RBRACE,
+        TokenType.ELSE,
       ].includes(this.currToken.tokenKind)
     ) {
       this.nextToken();
@@ -133,6 +134,19 @@ class Parser {
       const expr = this.expression();
       if (!expr) return null;
       return new ast.AssignmentNode(name, expr);
+    }
+
+    if (this.checkToken(TokenType.IDENT) && this.checkPeek(TokenType.LBRACKET)) {
+      const name = this.currToken.tokenText;
+      this.nextToken();
+      if (!this.match(TokenType.LBRACKET)) return null;
+      const index = this.expression();
+      if (!index) return null;
+      if (!this.match(TokenType.RBRACKET)) return null;
+      if (!this.match(TokenType.EQ)) return null;
+      const expr = this.expression();
+      if (!expr) return null;
+      return new ast.ArrayAssignmentNode(name, index, expr);
     }
 
     //   if (this.checkToken(TokenType.IDENT) && this.checkPeek(TokenType.LPAREN)) {
@@ -248,7 +262,7 @@ if (this.checkToken(TokenType.LET)) {
     }
     if (this.checkToken(TokenType.IF)) {
       this.nextToken();
-      const condition = this.comparison();
+      const condition = this.expression();
       if (!condition) {
         this.recover();
         return null;
@@ -269,6 +283,10 @@ if (this.checkToken(TokenType.LET)) {
       let else_block = null;
       if (this.checkToken(TokenType.ELSE)) {
         this.nextToken();
+        if (this.checkToken(TokenType.IF)) {
+          const elseIfNode = this.statement();
+          return new ast.IfNode(condition, then_block, elseIfNode ? [elseIfNode] : []);
+        }
         if (!this.match(TokenType.LBRACE)) return null;
         this.nl();
         else_block = [];
@@ -287,7 +305,7 @@ if (this.checkToken(TokenType.LET)) {
     }
     if (this.checkToken(TokenType.WHILE)) {
       this.nextToken();
-      const condition = this.comparison();
+      const condition = this.expression();
       if (!condition) {
         this.recover();
         return null;
@@ -334,7 +352,7 @@ if (this.checkToken(TokenType.FOR)) {
   }
   
   if (!this.match(TokenType.COMMA)) return null;
-  const condition = this.comparison();
+  const condition = this.expression();
   if (!condition) return null;
   if (!this.match(TokenType.COMMA)) return null;
   
@@ -548,19 +566,88 @@ if (this.checkToken(TokenType.FOR)) {
     ].includes(this.currToken?.tokenKind);
   }
   comparison() {
-    const left = this.expression();
+    let left = this.additive();
     if (!left) return null;
-    if (this.isComparisonOperator()) {
+    while (this.isComparisonOperator()) {
       const op = this.currToken;
       this.nextToken();
-      const right = this.expression();
+      const right = this.additive();
       if (!right) return null;
-      return new ast.BinOpNode(left, op, right);
+      left = new ast.BinOpNode(left, op, right);
     }
     return left;
   }
 
   expression() {
+    return this.logicalOr();
+  }
+
+  logicalOr() {
+    let node = this.logicalAnd();
+    if (!node) return null;
+    while (this.checkToken(TokenType.OR)) {
+      const op = this.currToken;
+      this.nextToken();
+      const right = this.logicalAnd();
+      if (!right) return null;
+      node = new ast.BinOpNode(node, op, right);
+    }
+    return node;
+  }
+
+  logicalAnd() {
+    let node = this.bitwiseOr();
+    if (!node) return null;
+    while (this.checkToken(TokenType.AND)) {
+      const op = this.currToken;
+      this.nextToken();
+      const right = this.bitwiseOr();
+      if (!right) return null;
+      node = new ast.BinOpNode(node, op, right);
+    }
+    return node;
+  }
+
+  bitwiseOr() {
+    let node = this.bitwiseXor();
+    if (!node) return null;
+    while (this.checkToken(TokenType.BITOR)) {
+      const op = this.currToken;
+      this.nextToken();
+      const right = this.bitwiseXor();
+      if (!right) return null;
+      node = new ast.BinOpNode(node, op, right);
+    }
+    return node;
+  }
+
+  bitwiseXor() {
+    let node = this.bitwiseAnd();
+    if (!node) return null;
+    while (this.checkToken(TokenType.BITXOR)) {
+      const op = this.currToken;
+      this.nextToken();
+      const right = this.bitwiseAnd();
+      if (!right) return null;
+      node = new ast.BinOpNode(node, op, right);
+    }
+    return node;
+  }
+
+  bitwiseAnd() {
+    let node = this.comparison();
+    if (!node) return null;
+    while (this.checkToken(TokenType.BITAND)) {
+      const op = this.currToken;
+      this.nextToken();
+      const right = this.comparison();
+      if (!right) return null;
+      node = new ast.BinOpNode(node, op, right);
+    }
+    return node;
+  }
+
+  additive() {
     let node = this.term();
     if (!node) return null;
     while (
@@ -666,9 +753,53 @@ if (this.checkToken(TokenType.FOR)) {
         }
         // Don't check if function exists here - let code generator handle it
         node = new ast.CallNode(name, args);
+      } else if (this.checkToken(TokenType.LBRACKET)) {
+        this.nextToken();
+        const index = this.expression();
+        if (!index) return null;
+        if (!this.match(TokenType.RBRACKET)) {
+          this.reportError(
+            "Expected ] after array index",
+            this.currToken,
+            "Close array access with ]"
+          );
+          return null;
+        }
+        node = new ast.ArrayAccessNode(name, index);
       } else {
         node = new ast.VarNode(name);
       }
+    } else if (this.checkToken(TokenType.LBRACKET)) {
+      this.nextToken();
+      const elements = [];
+      if (!this.checkToken(TokenType.RBRACKET)) {
+        do {
+          const element = this.expression();
+          if (!element) {
+            this.reportError(
+              "Expected array element expression",
+              this.currToken,
+              "Use numbers, variables, or expressions inside arrays"
+            );
+            return null;
+          }
+          elements.push(element);
+          if (this.checkToken(TokenType.COMMA)) {
+            this.nextToken();
+          } else {
+            break;
+          }
+        } while (true);
+      }
+      if (!this.match(TokenType.RBRACKET)) {
+        this.reportError(
+          "Expected ] after array literal",
+          this.currToken,
+          "Close array literal with ]"
+        );
+        return null;
+      }
+      node = new ast.ArrayLiteralNode(elements);
     } else if (this.checkToken(TokenType.LPAREN)) {
       this.nextToken();
       node = this.expression();
