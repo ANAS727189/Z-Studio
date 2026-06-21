@@ -117,121 +117,20 @@ Open `http://localhost:3000` to start coding in Z--!
 
 ---
 
-## Z-- Language Reference
+## Language Reference
 
-### Program Structure
+For the complete Z-- language specification, see the dedicated reference:
 
-Every Z-- program starts with `start` and ends with `end`.
+> **📖 [Z-- Language Reference (zmm-lang.md)](docs/zmm-lang.md)**
+>
+> Covers: program structure, data types, numeric literals, all operators, control flow,
+> functions, arrays, strings, and 10 annotated sample programs.
 
-```text
-start
-  // statements...
-end
-
-```
-
-### Variable Declaration
-
-```text
-let name = value        // with initial value
-let name                // without initial value (null until assigned)
-
-```
-
-### Data Types & Numeric Literals
-
-* **Integer:** `let n = 42`
-* **Float:** `let f = 3.14`
-* **String:** `let s = "hello"`
-* **Boolean:** `let flag = true`
-
-```text
-let decimal = 42       // base 10
-let hex     = 0x2A     // hexadecimal
-let binary  = 0b101010 // binary
-let octal   = 0o52     // octal
-
-```
-
-### Operators
-
-**Arithmetic:** `+`, `-`, `*`, `/`, `%`
-**Unary:**
-* `++x` (pre-increment)
-* `x--` (post-decrement)
-* `-x` (unary minus/negation)
-
-
-**Comparison:** `==`, `!=`, `<`, `<=`, `>`, `>=`
-**Logical & Bitwise:** `&&`, `||`, `&`, `|`, `^`, `%`
-
-### Control Flow
-
-**If / Else / Else If:**
-
-```text
-if score >= 90 {
-  print("A")
-} else if score >= 75 {
-  print("B")
-} else {
-  print("C")
-}
-
-```
-
-**Loops (While & For):**
-
-```text
-while n > 0 {
-  if n == 5 { break } // exit loop early
-  print(n)
-  n = n - 1
-}
-
-for i = 1, i <= 10, i++ {
-  print(i)
-}
-
-```
-
-### Functions
-
-```text
-fun add {
-  arg = (a, b)
-  return a + b
-}
-
-let result = add(3, 4)
-
-```
-
-### Arrays
-
-Indexing is 0-based.
-
-```text
-let nums = [2, 4, 6, 8]
-print(nums[0])        // read
-nums[1] = 5           // write
-
-```
-
-### Strings & Input
-
-```text
-let msg = "Hello"
-let full = msg + ", Z--"
-print(full)
-
-let n
-print("Enter a number:")
-input(n)
-
-```
+The language reference is maintained separately to keep this README focused on
+project setup and usage.
 
 ---
+
 
 ## Usage Examples
 
