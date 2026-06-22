@@ -196,7 +196,10 @@ Key features:
 
 #### Stage 2: Parser (Syntax Analysis)
 
-**Purpose:** Understand the structure of the code and build a tree representation.
+**Purpose:** Understand the structure of the code and build a tree representation, called the Abstract Syntax Tree (AST).
+##### Parsers are fundamentally based on context-free grammars (CFGs), which are used to define the syntax of programming languages and natural language structures.
+
+<img src="./parser.png" />
 
 **Input:** Tokens from the lexer
 **Output:** AST (Abstract Syntax Tree)
