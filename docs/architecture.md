@@ -214,7 +214,63 @@ The parser uses **recursive descent parsing** - a method where each grammar rule
 - `comparison()` handles comparison operations
 - `unary()` handles unary operators like `++` and `--`
 
-Parser duties:
+###### Parsing Techniques
+
+**1. Top-Down Parsing**
+
+This approach constructs the parse tree starting from the **root (start symbol)** and moves toward the **leaves (input tokens)** using **leftmost derivation**.
+
+**a) Recursive Descent Parsing**
+- A simple and intuitive parsing method.
+- Each non-terminal in the grammar is associated with a separate procedure/function.
+- Often uses **backtracking**, meaning it tries alternative productions if one fails.
+- Drawbacks:
+  - Can be inefficient due to backtracking.
+  - Cannot handle **left-recursive grammars** directly.
+
+**b) Predictive Parsing (LL Parsing)**
+- A non-recursive top-down parsing technique.
+- Uses a **parsing table** and **look-ahead tokens** to choose the correct production rule.
+- Does **not** require backtracking, making it more efficient.
+- Requirements:
+  - Grammar must be free of **left recursion**.
+  - Grammar should not have **common prefixes** (usually removed using left factoring).
+
+---
+
+**2. Bottom-Up Parsing**
+
+This approach constructs the parse tree starting from the **leaves (input tokens)** and moves toward the **root (start symbol)**, effectively performing a **reverse rightmost derivation**.
+
+**a) Shift-Reduce Parsing**
+- Fundamental bottom-up parsing mechanism.
+- Two main operations:
+  - **Shift:** Push the next input symbol onto the stack.
+  - **Reduce:** Replace a handle on the stack with the corresponding non-terminal using grammar rules.
+- Repeats these operations until the start symbol is obtained.
+
+**b) LR Parsing**
+- A powerful family of bottom-up parsers.
+- Types include:
+  - LR(0)
+  - SLR(1)
+  - LALR(1)
+  - CLR(1) / Canonical LR(1)
+- Features:
+  - Deterministic parsing.
+  - No backtracking required.
+  - Can handle a larger class of grammars than top-down parsers.
+  - Widely used in compiler construction.
+
+**c) Operator Precedence Parsing**
+- A specialized bottom-up parsing technique.
+- Primarily used for parsing arithmetic expressions.
+- Uses:
+  - **Operator precedence** (e.g., `*` before `+`)
+  - **Associativity** (left-to-right or right-to-left)
+- Simplifies expression parsing without requiring a full LR parser.
+
+**Parser duties:**
 - Validates syntax
 - Builds the AST
 - Tracks variable declarations (symbols)
