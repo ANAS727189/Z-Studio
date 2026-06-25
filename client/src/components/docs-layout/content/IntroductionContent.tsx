@@ -31,7 +31,7 @@ export const IntroductionContent = () => (
       </div>
     </div>
     <div className="bg-gradient-to-r from-purple-900/20 to-blue-900/20 p-6 rounded-lg border border-purple-800/30">
-      <h3 className="text-lg font-semibold text-white mb-2">Built with ❤️ by Anas Khan</h3>
+      <h3 className="text-lg font-semibold text-white mb-2">Built with ❤️ by Anas</h3>
     </div>
   </div>
 );
